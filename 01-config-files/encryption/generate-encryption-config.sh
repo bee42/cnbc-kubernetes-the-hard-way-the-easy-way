@@ -13,7 +13,7 @@ resources:
     providers:
       - aescbc:
           keys:
-            - name: key1
+            - name: cnbc
               secret: ${ENCRYPTION_KEY}
       - identity: {}
 EOF

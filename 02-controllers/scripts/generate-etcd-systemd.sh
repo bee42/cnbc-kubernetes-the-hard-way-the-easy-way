@@ -4,15 +4,28 @@ IFS=$'\n\t'
 
 ETCD_VERSION="${1}"
 
+function get_arch() {
+  case "$(uname -m)" in
+    armv5*) echo -n "armv5";;
+    armv6*) echo -n "armv6";;
+    armv7*) echo -n "armv7";;
+    aarch64) echo -n "arm64";;
+    x86) echo -n "386";;
+    x86_64) echo -n "amd64";;
+    i686) echo -n "386";;
+    i386) echo -n "386";;
+  esac
+}
+
 if ! grep 'worker-1-k8s' /etc/hosts &> /dev/null; then
   # shellcheck disable=SC2002
   cat multipass-hosts | sudo tee -a /etc/hosts
 fi
 
 if [[ ! -x $(command -v etcd) || ! -x $(command -v etcdctl) ]]; then
-  tar -xvf etcd-v"${ETCD_VERSION}"-linux-amd64.tar.gz
-  sudo mv etcd-v"${ETCD_VERSION}"-linux-amd64/etcd* /usr/local/bin/
-  rm -rf etcd-v"${ETCD_VERSION}"-linux-amd64.tar.gz etcd-v"${ETCD_VERSION}"-linux-amd64/
+  tar -xvf etcd-v"${ETCD_VERSION}"-linux-$(get_arch).tar.gz
+  sudo mv etcd-v"${ETCD_VERSION}"-linux-$(get_arch)/etcd* /usr/local/bin/
+  rm -rf etcd-v"${ETCD_VERSION}"-linux-$(get_arch).tar.gz etcd-v"${ETCD_VERSION}"-linux-$(get_arch)/
 fi
 
 if [[ ! -f /etc/etcd/kubernetes.pem || ! -f /etc/etcd/kubernetes-key.pem ]]; then
@@ -41,7 +54,7 @@ echo 'Creating etcd systemd unit'
 cat <<EOF | sudo tee /etc/systemd/system/etcd.service
 [Unit]
 Description=etcd
-Documentation=https://github.com/coreos
+Documentation=https://etcd.io
 
 [Service]
 Type=notify

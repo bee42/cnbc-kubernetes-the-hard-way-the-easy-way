@@ -5,10 +5,28 @@ IFS=$'\n\t'
 CONTAINERD_VERSION="${1}"
 CNI_PLUGINS_VERSION="${2}"
 DNS_CLUSTER_IP="${3}"
+REGISTRY_IP="${4}"
+KUBE_PROXY_ENABLED="${5}"
+CLUSTER_CIDR="${6}"
+
+function get_arch() {
+  case "$(uname -m)" in
+    armv5*) echo -n "armv5";;
+    armv6*) echo -n "armv6";;
+    armv7*) echo -n "armv7";;
+    arm64) echo -n "arm64";;
+    aarch64) echo -n "arm64";;
+    x86) echo -n "386";;
+    x86_64) echo -n "amd64";;
+    i686) echo -n "386";;
+    i386) echo -n "386";;
+  esac
+}
 
 if ! grep 'controller-k8s' /etc/hosts &> /dev/null; then
   # shellcheck disable=SC2002
   cat multipass-hosts | sudo tee -a /etc/hosts
+  echo "${REGISTRY_IP} cnbc-mirror cnbc-registry" >>/etc/hosts
 fi
 
 if ! command -v socat &> /dev/null || ! command -v conntrack &> /dev/null || ! command -v ipset &> /dev/null; then
@@ -32,10 +50,10 @@ if ! command -v kubectl &> /dev/null || ! command -v kube-proxy &> /dev/null || 
     /var/run/kubernetes
 
   mkdir containerd
-  tar -xvf "cri-containerd-${CONTAINERD_VERSION}-linux-amd64.tar.gz" -C containerd
+  tar -xvf "cri-containerd-${CONTAINERD_VERSION}-linux-$(get_arch).tar.gz" -C containerd
   mv containerd/usr/local/bin/crictl .
   mv containerd/usr/local/sbin/runc .
-  sudo tar -xvf "cni-plugins-linux-amd64-v${CNI_PLUGINS_VERSION}.tgz" -C /opt/cni/bin/
+  sudo tar -xvf "cni-plugins-linux-$(get_arch)-v${CNI_PLUGINS_VERSION}.tgz" -C /opt/cni/bin/
   chmod +x crictl kubectl kube-proxy kubelet runc
   sudo mv crictl kubectl kube-proxy kubelet runc /usr/local/bin/
   sudo mv containerd/usr/local/bin/* /bin/
@@ -57,6 +75,11 @@ state = "/run/containerd"
   [plugins."io.containerd.runtime.v1.linux"]
     runtime = "runc"
     runtime_root = ""
+
+  [plugins."io.containerd.grpc.v1.cri".registry]
+    [plugins."io.containerd.grpc.v1.cri".registry.mirrors]
+      [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]
+        endpoint = ["http://cnbc-mirror:5001", "https://registry-1.docker.io"]
 EOF
 
   cat <<EOF | sudo tee /etc/systemd/system/containerd.service
@@ -131,7 +154,7 @@ EOF
 cat <<EOF | sudo tee /etc/systemd/system/kubelet.service
 [Unit]
 Description=Kubernetes Kubelet
-Documentation=https://github.com/kubernetes/kubernetes
+Documentation=https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/
 After=containerd.service
 Requires=containerd.service
 
@@ -149,6 +172,8 @@ WantedBy=multi-user.target
 EOF
 fi
 
+if [ $KUBE_PROXY_ENABLED == "on" ] ; then
+
 if [[ ! -f /var/lib/kube-proxy/kubeconfig || ! -f /var/lib/kube-proxy/kube-proxy-config.yaml || ! -f /etc/systemd/system/kube-proxy.service ]]; then
   echo 'Creating kube-proxy config'
   sudo mv kube-proxy.kubeconfig /var/lib/kube-proxy/kubeconfig
@@ -158,13 +183,13 @@ apiVersion: kubeproxy.config.k8s.io/v1alpha1
 clientConnection:
   kubeconfig: "/var/lib/kube-proxy/kubeconfig"
 mode: "iptables"
-clusterCIDR: "10.200.0.0/16"
+clusterCIDR: "${CLUSTER_CIDR}"
 EOF
 
 cat <<EOF | sudo tee /etc/systemd/system/kube-proxy.service
 [Unit]
 Description=Kubernetes Kube Proxy
-Documentation=https://github.com/kubernetes/kubernetes
+Documentation=https://kubernetes.io/docs/reference/command-line-tools-reference/kube-proxy/
 
 [Service]
 ExecStart=/usr/local/bin/kube-proxy \\
@@ -175,10 +200,18 @@ RestartSec=5
 [Install]
 WantedBy=multi-user.target
 EOF
+
+fi
+
+declare -a K8S_SERVICES=('containerd' 'kubelet' 'kube-proxy')
+
+else
+
+declare -a K8S_SERVICES=('containerd' 'kubelet')
+
 fi
 
 sudo systemctl daemon-reload
-declare -a K8S_SERVICES=('containerd' 'kubelet' 'kube-proxy')
 sudo systemctl enable --now "${K8S_SERVICES[@]}"
 
 function check_systemctl_status() {

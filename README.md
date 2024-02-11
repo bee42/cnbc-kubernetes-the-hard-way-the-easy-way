@@ -1,21 +1,39 @@
-# Kubernetes The Hard Way The Easy Way
+# Kubernetes The Hard Way or The Easy Way
 
 Creates a Single Controller Kubernetes cluster using
 [multipass](https://github.com/canonical/multipass)
 and
 [cilium](https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/#install-cilium)
 
+Inspired and fork from
+
+- [kelseyhightower/kubernetes-the-hard-way](https://github.com/kelseyhightower/kubernetes-the-hard-way)
+- [kubernetes-the-hard-way-the-easy-way)](https://github.com/missingcharacter/kubernetes-the-hard-way-the-easy-way)
+
 All scripts are available to learn how it is built.
 
 ## Specs
 
 - Ubuntu 22.04
-- Kubernetes 1.28.4
-- etcd 3.5.10
-- containerd 1.7.10
+- Kubernetes 1.28.6
+  - https://kubernetes.io/releases/
+- etcd 3.5.12
+  - https://github.com/etcd-io/etcd/releases
+- containerd 1.7.13
+  - https://github.com/containerd/containerd/releases
 - cni plugins 1.4.0
-- cilium 1.14.4 (via helm chart)
-- coredns 1.28.2 (via helm chart)
+  - https://github.com/containernetworking/plugins/releases
+- cilium 1.15.0 (via helm chart)
+  - https://github.com/cilium/cilium/releases
+- coredns 1.29.0 (via helm chart)
+  - https://github.com/coredns/helm/blob/master/charts/coredns/Chart.yaml
+  - 1.11.1
+    - https://github.com/coredns/coredns/releases
+- nerdctl 1.7.3 (start registry and mirror)
+  - https://github.com/containerd/nerdctl/releases
+- metrics server (3.12.0)
+  - https://github.com/kubernetes-sigs/metrics-server
+  - https://artifacthub.io/packages/helm/metrics-server/metrics-server
 
 ## Requirements
 
@@ -47,7 +65,7 @@ All scripts are available to learn how it is built.
   - linux:
 
     ```shell
-    wget https://storage.googleapis.com/kubernetes-release/release/v1.18.5/bin/linux/amd64/kubectl
+    wget https://storage.googleapis.com/kubernetes-release/release/v1.28.6/bin/linux/${ARCH}/kubectl
     chmod +x kubectl
     sudo mv kubectl /usr/local/bin/
     ```
@@ -55,7 +73,7 @@ All scripts are available to learn how it is built.
   - mac:
 
     ```shell
-    curl -o kubectl https://storage.googleapis.com/kubernetes-release/release/v1.18.5/bin/darwin/amd64/kubectl
+    curl -o kubectl https://storage.googleapis.com/kubernetes-release/release/v1.28.6/bin/darwin/${ARCH}/kubectl
     chmod +x kubectl
     sudo mv kubectl /usr/local/bin/
     ```
@@ -116,7 +134,7 @@ All scripts are available to learn how it is built.
    00000010  73 2f 64 65 66 61 75 6c  74 2f 6b 75 62 65 72 6e  |s/default/kubern|
    00000020  65 74 65 73 2d 74 68 65  2d 68 61 72 64 2d 77 61  |etes-the-hard-wa|
    00000030  79 0a 6b 38 73 3a 65 6e  63 3a 61 65 73 63 62 63  |y.k8s:enc:aescbc|
-   00000040  3a 76 31 3a 6b 65 79 31  3a 61 bb c0 45 f2 df 88  |:v1:key1:a..E...|
+   00000040  3a 76 31 3a 6b 65 79 31  3a 61 bb c0 45 f2 df 88  |:v1:cnbc:a..E...|
    00000050  36 46 05 df c1 df 26 e1  e0 59 18 9f 7d 51 7a d9  |6F....&..Y..}Qz.|
    00000060  28 0d 03 4e c3 14 55 01  51 d6 aa cc 50 21 a5 09  |(..N..U.Q...P!..|
    00000070  86 92 89 9b 33 82 43 09  7d 5b fe bb 68 45 43 48  |....3.C.}[..hECH|
@@ -130,7 +148,7 @@ All scripts are available to learn how it is built.
    000000ea
    ```
 
-   The etcd key should be prefixed with `k8s:enc:aescbc:v1:key1`, which
+   The etcd key should be prefixed with `k8s:enc:aescbc:v1:cnbc`, which
    indicates the `aescbc` provider was used to encrypt the data with the `key1`
    encryption key.
 
@@ -197,8 +215,60 @@ All scripts are available to learn how it is built.
 later the bootstrap scripts append it to `/etc/hosts` on the controllers and
 workers
 
+### Cilium
+
+* https://docs.cilium.io/en/stable/operations/system_requirements/#admin-system-reqs
+
+```shell
+mount bpffs /sys/fs/bpf -t bpf
+```
+
+## FAQ
+
+* Why kube-proxy is needed at worker nodes?
+  * https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/
+  * isn't needed
+  * use L2 setup the 05-networking and disable kube-proxy setup at worker!
+* Start a registry and mirror to start deplopment
+  * start with nerdctl compose up :)
+* Why all certs starts with the ca-config...
+  * missing kube-scheduler 10259 client-server cert
+    * --tls-cert-file string
+    * --tls-private-key
+    * better only localhst access 
+      * --bind-address string     Default: 0.0.0.0
+* Start fluxcd to create a PAAS
+  * simple git-server
+  * external DNS + core dns + internal etcd
+  * Cert Manager + intermediated CA
+  * use cilium ingress
+  * metrics server
+  * CSI NFS Storage Provisioner
+* Test HA Setup with kube-vip
+  * Multiple Contoller
+  * API Server VIP
+  * kube-vip
+* Backup
+  * etcd database
+  * velero
+* Buildkitd server
+* Registry with TLS Cert and AUTH
+  * Harbor
+  * Helm Chart
+* Setup a CI Testing System
+  * MACOS - Parallels VM?
+  * Ubuntu + Micro VM's
+  * Build at your own Hardware
+* Gitlab/CI vs github actions
+
 ## Related links
 
-- [kelseyhightower/kubernetes-the-hard-way](https://github.com/kelseyhightower/kubernetes-the-hard-way)
+
 - [multipass /etc/hosts](https://github.com/canonical/multipass/issues/853#issuecomment-630097263)
 - <https://www.youtube.com/playlist?list=PLC6M23w-Wn5mA_bomV6YVB5elNw7IsHt5>
+- [Kubernetes HA with kubeadm](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/
+- [CNI Network with Cilium](https://cilium.io)
+- [Kubernetes-Tutorials](https://github.com/Albertchong/Kubernetes-Tutorials/)
+
+Regards,
+[`|-o-|` The pathfinder - Peter](mailto://peter.rossbach@bee42.com)

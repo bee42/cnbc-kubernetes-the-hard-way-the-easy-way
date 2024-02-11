@@ -19,12 +19,12 @@ function get_os() {
   esac
 }
 
-
 function get_arch() {
   case "$(uname -m)" in
     armv5*) echo -n "armv5";;
     armv6*) echo -n "armv6";;
     armv7*) echo -n "armv7";;
+    arm64) echo -n "arm64";;
     aarch64) echo -n "arm64";;
     x86) echo -n "386";;
     x86_64) echo -n "amd64";;

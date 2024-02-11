@@ -41,7 +41,7 @@ echo 'Creating kube-apiserver systemd service'
 cat <<EOF | sudo tee /etc/systemd/system/kube-apiserver.service
 [Unit]
 Description=Kubernetes API Server
-Documentation=https://github.com/kubernetes/kubernetes
+Documentation=https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/
 
 [Service]
 ExecStart=/usr/local/bin/kube-apiserver \\
@@ -90,12 +90,12 @@ echo 'Creating Kubernetes Controller Manager systemd service'
 cat <<EOF | sudo tee /etc/systemd/system/kube-controller-manager.service
 [Unit]
 Description=Kubernetes Controller Manager
-Documentation=https://github.com/kubernetes/kubernetes
+Documentation=https://kubernetes.io/docs/reference/command-line-tools-reference/kube-controller-manager/
 
 [Service]
 ExecStart=/usr/local/bin/kube-controller-manager \\
   --allocate-node-cidrs=true \\
-  --bind-address=0.0.0.0 \\
+  --bind-address=127.0.0.1 \\
   --cluster-cidr=${CLUSTER_CIDR} \\
   --cluster-name=kubernetes \\
   --cluster-signing-cert-file=/var/lib/kubernetes/ca.pem \\
@@ -135,11 +135,12 @@ EOF
 cat <<EOF | sudo tee /etc/systemd/system/kube-scheduler.service
 [Unit]
 Description=Kubernetes Scheduler
-Documentation=https://github.com/kubernetes/kubernetes
+Documentation=https://kubernetes.io/docs/reference/command-line-tools-reference/kube-scheduler/
 
 [Service]
 ExecStart=/usr/local/bin/kube-scheduler \\
   --config=/etc/kubernetes/config/kube-scheduler.yaml \\
+  --bind-address 127.0.0.1 \\
   --v=2
 Restart=on-failure
 RestartSec=5

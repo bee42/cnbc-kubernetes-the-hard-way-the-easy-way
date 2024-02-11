@@ -19,17 +19,27 @@ declare -a CONTROLLER_FILES=(
   './downloads/kube-apiserver'
   './downloads/kube-controller-manager'
   './downloads/kube-scheduler'
-  "./downloads/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz"
+  "./downloads/etcd-v${ETCD_VERSION}-linux-$(get_arch).tar.gz"
 )
+
 declare -a WORKER_FILES=(
   './kube-proxy/kube-proxy.kubeconfig'
   './downloads/kube-proxy'
   './downloads/kubelet'
-  "./downloads/cni-plugins-linux-amd64-v${CNI_PLUGINS_VERSION}.tgz"
-  "./downloads/cri-containerd-${CONTAINERD_VERSION}-linux-amd64.tar.gz"
+  "./downloads/cni-plugins-linux-$(get_arch)-v${CNI_PLUGINS_VERSION}.tgz"
+  "./downloads/cri-containerd-${CONTAINERD_VERSION}-linux-$(get_arch).tar.gz"
 )
 
-multipass list | grep -E -v "Name|\-\-" | awk '{var=sprintf("%s\t%s",$3,$1); print var}' > multipass-hosts
+declare -a REIGSTRY_FILES=(
+  "./registry/docker-compose.yml"
+  "./registry/cnbcmirror.yml"
+  "./registry/cnbcregistry.yml"
+  "./downloads/cni-plugins-linux-$(get_arch)-v${CNI_PLUGINS_VERSION}.tgz"
+  "./downloads/cri-containerd-${CONTAINERD_VERSION}-linux-$(get_arch).tar.gz"
+  "./downloads/nerdctl-full-${NERDCTL_VERSION}-linux-$(get_arch).tar.gz"
+)
+
+multipass list | grep -E -v "Name|\-\-" | grep "k8s" | awk '{var=sprintf("%s\t%s",$3,$1); print var}' > multipass-hosts
 
 for file in ./*/*.sh; do
   cd "$(dirname ./"${file}")" || exit
@@ -48,5 +58,13 @@ for instance in $(multipass list | grep 'worker' | awk '{ print $1 }'); do
     transfer_file "${file}" "${instance}"
   done
 done
+
+if [ $REGISTRY_MODE ] ; then
+  for instance in $(multipass list | grep 'registry' | awk '{ print $1 }'); do
+    for file in "${REIGSTRY_FILES[@]}" ; do
+      transfer_file "${file}" "${instance}"
+    done
+  done
+fi
 
 rm -f multipass-hosts

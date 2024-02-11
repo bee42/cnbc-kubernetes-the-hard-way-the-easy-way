@@ -1,0 +1,24 @@
+bpf:
+  masquerade: true
+bgp:
+  enabled: false
+cluster:
+  name: cnbc-hardway
+  id: 1
+endpointRoutes:
+  enabled: true
+ipam:
+  mode: kubernetes
+ipv4NativeRoutingCIDR: "172.16.0.0/16"
+kubeProxyReplacement: true
+kubeProxyReplacementHealthzBindAddr: 0.0.0.0:10256
+l2announcements:
+  enabled: true
+  # https://github.com/cilium/cilium/issues/26586
+  leaseDuration: 120s
+  leaseRenewDeadline: 60s
+  leaseRetryPeriod: 1s
+loadBalancer:
+  algorithm: maglev
+  mode: snat
+localRedirectPolicy: true
