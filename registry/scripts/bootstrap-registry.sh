@@ -36,7 +36,7 @@ if ! command -v nerdctl &> /dev/null || ! command -v runc &> /dev/null; then
     /etc/cni/net.d \
     /opt/cni/bin \
     /opt/nerdctl
-  
+
   mkdir -p containerd
   tar -xvf "cri-containerd-${CONTAINERD_VERSION}-linux-$(get_arch).tar.gz" -C containerd
   mv containerd/usr/local/bin/crictl .

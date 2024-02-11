@@ -19,7 +19,7 @@ All scripts are available to learn how it is built.
 - Ubuntu 22.04
 - [Kubernetes 1.28.6](https://kubernetes.io/releases/)
 - [etcd 3.5.12](https://github.com/etcd-io/etcd/releases)
-- [containerd 1.7.13](https://github.com/containerd/containerd/releases}
+- [containerd 1.7.13](https://github.com/containerd/containerd/releases)
 - [cni plugins 1.4.0](https://github.com/containernetworking/plugins/releases)
 - [cilium 1.15.0 (via helm chart)](https://github.com/cilium/cilium/releases)
 - [coredns 1.29.0 (via helm chart)](https://github.com/coredns/helm/blob/master/charts/coredns/Chart.yaml)
@@ -228,8 +228,8 @@ mount bpffs /sys/fs/bpf -t bpf
   - missing kube-scheduler 10259 client-server cert
     - `--tls-cert-file string`
     - `--tls-private-key`
-    - better only localhst access 
-      - `--bind-address string     Default: 0.0.0.0``
+    - better allow only localhost access
+      - `--bind-address string     Default: 0.0.0.0`
 - Start fluxcd to create a PAAS
   - simple git-server
   - external DNS + core dns + internal etcd

@@ -35,6 +35,7 @@ helm install cilium cilium/cilium --version "${CILIUM_CHART_VERSION}" \
     --set ingressController.loadbalancerMode=shared \
     --set k8sServiceHost="${KUBERNETES_VIRTUAL_IP_ADDRESS}" \
     --set k8sServicePort=6443 \
+    --set ipv4NativeRoutingCIDR="${CLUSTER_CIDR}" \
     --values cilium-values.yaml
 
 cat >ipam.yaml <<EOF
@@ -51,5 +52,6 @@ kubectl apply -f ipam.yaml
 
 echo 'Installing metrics-server'
 
-helm upgrade --install metrics-server metrics-server/metrics-server --version "${METRICS_SERVER_CHART_VERSION}" \
-    --namespace kube-system 
+helm upgrade --install metrics-server metrics-server/metrics-server \
+    --version "${METRICS_SERVER_CHART_VERSION}" \
+    --namespace kube-system

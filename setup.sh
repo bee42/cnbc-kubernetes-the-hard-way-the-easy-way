@@ -79,7 +79,7 @@ if [ "$REGISTRY_MODE" == "on" ] ; then
   cd registry/ || exit
   bash transfer-shell-scripts.sh
   cd - || exit
-  
+
   msg_info "Provisioning registry-cnbc-k8s"
 
   multipass exec "registry-cnbc-k8s" -- bash bootstrap-workers.sh "${CONTAINERD_VERSION}" "${CNI_PLUGINS_VERSION}" "${NERDCTL_VERSION}"

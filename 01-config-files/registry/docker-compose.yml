@@ -1,5 +1,5 @@
+---
 version: '3.7'
-
 services:
   mirror:
     container_name: cnbc-mirror
@@ -23,7 +23,6 @@ services:
       - ./cnbcregistry.yml:/etc/docker/registry/config.yml
       - cnbc-registry:/var/lib/registry
     restart: always
- 
 volumes:
   cnbc-mirror:
   cnbc-registry:
