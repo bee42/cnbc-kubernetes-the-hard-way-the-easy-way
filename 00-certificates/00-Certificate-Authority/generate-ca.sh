@@ -26,9 +26,41 @@ cat > ca-config.json <<EOF
 }
 EOF
 
-COUNTRY="${2:-US}"
-CITY="${3:-Austin}"
-STATE="${4:-Texas}"
+cat >client-config.json <<EOF
+{
+  "signing": {
+    "default": {
+      "expiry": "${VALID_IN_HOURS}h"
+    },
+    "profiles": {
+      "kubernetes": {
+        "usages": ["client auth"],
+        "expiry": "${VALID_IN_HOURS}h"
+      }
+    }
+  }
+}
+EOF
+
+cat >client-server-config.json <<EOF
+{
+  "signing": {
+    "default": {
+      "expiry": "${VALID_IN_HOURS}h"
+    },
+    "profiles": {
+      "kubernetes": {
+        "usages": ["server auth", "client auth"],
+        "expiry": "${VALID_IN_HOURS}h"
+      }
+    }
+  }
+}
+EOF
+
+COUNTRY="${2:-DE}"
+CITY="${3:-Bochum}"
+STATE="${4:-NRW}"
 
 cat > ca-csr.json <<EOF
 {
@@ -41,8 +73,8 @@ cat > ca-csr.json <<EOF
     {
       "C": "${COUNTRY}",
       "L": "${CITY}",
-      "O": "Kubernetes",
-      "OU": "CA",
+      "O": "bee42 solutions gmbh",
+      "OU": "CNBC",
       "ST": "${STATE}"
     }
   ]

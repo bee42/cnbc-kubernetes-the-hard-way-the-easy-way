@@ -7,9 +7,9 @@ GITROOT=$(git rev-parse --show-toplevel)
 . "${GITROOT}"/lib/utils
 strictMode
 
-COUNTRY="${1:-US}"
-CITY="${2:-Austin}"
-STATE="${3:-Texas}"
+COUNTRY="${1:-DE}"
+CITY="${2:-Bochum}"
+STATE="${3:-NRW}"
 VERSION_REGEX='([0-9]*)\.'
 
 declare -a COMPUTER_IPV4_ADDRESSES=() COMPUTER_IP_ADDRESSES=()

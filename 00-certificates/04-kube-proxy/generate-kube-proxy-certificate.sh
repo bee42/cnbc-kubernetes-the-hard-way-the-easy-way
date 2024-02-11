@@ -2,9 +2,9 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-COUNTRY="${1:-US}"
-CITY="${2:-Austin}"
-STATE="${3:-Texas}"
+COUNTRY="${1:-DE}"
+CITY="${2:-Bochum}"
+STATE="${3:-NRW}"
 
 cat > kube-proxy-csr.json <<EOF
 {
@@ -28,6 +28,6 @@ EOF
 cfssl gencert \
   -ca=../00-Certificate-Authority/ca.pem \
   -ca-key=../00-Certificate-Authority/ca-key.pem \
-  -config=../00-Certificate-Authority/ca-config.json \
+  -config=../00-Certificate-Authority/client-config.json \
   -profile=kubernetes \
   kube-proxy-csr.json | cfssljson -bare kube-proxy
