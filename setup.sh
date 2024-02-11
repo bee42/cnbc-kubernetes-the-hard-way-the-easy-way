@@ -69,7 +69,10 @@ if [ "$REGISTRY_MODE" == "on" ] ; then
 
   multipass launch --name "registry-cnbc-k8s" --cpus 1 --memory 512M --disk 20G "${UBUNTU_VERSION}"
 
-  export REGISTRY_IP=$(multipass exec registry-cnbc-k8s -- /bin/sh -c "ip  -o -4 addr list enp0s1 | awk '{print \$4}' | cut -d/ -f1")
+  _IP=$(multipass exec registry-cnbc-k8s -- /bin/sh -c "ip -o -4 addr list enp0s1 | awk '{print \$4}' | cut -d/ -f1")
+  if [ ! -z "$_IP" ] ; then
+    export REGISTRY_IP=$_IP
+  fi
 
   msg_info "Push registry setup scripts"
 

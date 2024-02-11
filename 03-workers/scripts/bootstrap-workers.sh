@@ -172,7 +172,7 @@ WantedBy=multi-user.target
 EOF
 fi
 
-if [ $KUBE_PROXY_ENABLED == "on" ] ; then
+if [ "$KUBE_PROXY_ENABLED" == "on" ] ; then
 
 if [[ ! -f /var/lib/kube-proxy/kubeconfig || ! -f /var/lib/kube-proxy/kube-proxy-config.yaml || ! -f /etc/systemd/system/kube-proxy.service ]]; then
   echo 'Creating kube-proxy config'

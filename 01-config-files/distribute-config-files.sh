@@ -59,7 +59,7 @@ for instance in $(multipass list | grep 'worker' | awk '{ print $1 }'); do
   done
 done
 
-if [ $REGISTRY_MODE ] ; then
+if [ "$REGISTRY_MODE" == "on" ] ; then
   for instance in $(multipass list | grep 'registry' | awk '{ print $1 }'); do
     for file in "${REIGSTRY_FILES[@]}" ; do
       transfer_file "${file}" "${instance}"

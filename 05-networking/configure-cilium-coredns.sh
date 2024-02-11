@@ -20,7 +20,12 @@ helm install coredns coredns/coredns --version "${COREDNS_CHART_VERSION}" \
 
 echo 'Installing cilium'
 
-KUBERNETES_VIRTUAL_IP_ADDRESS="$(multipass list | grep 'controller' | awk '{ print $1 }' | xargs multipass info | grep 'IPv4' | awk '{ print $2 }')"
+_IP_ADDRESS="$(multipass list | grep 'controller' | awk '{ print $1 }' | xargs multipass info | grep 'IPv4' | awk '{ print $2 }')"
+if [ "$_IP_ADDRESS" == "--" ]; then
+  export KUBERNETES_VIRTUAL_IP_ADDRESS="192.168.67.3"
+else
+  export KUBERNETES_VIRTUAL_IP_ADDRESS="$_IP_ADDRESS"
+fi
 
 helm install cilium cilium/cilium --version "${CILIUM_CHART_VERSION}" \
     --namespace kube-system \
@@ -28,9 +33,19 @@ helm install cilium cilium/cilium --version "${CILIUM_CHART_VERSION}" \
     --set hubble.ui.enabled=true \
     --set ingressController.enabled=true \
     --set ingressController.loadbalancerMode=shared \
-    --set k8sServiceHost=${KUBERNETES_VIRTUAL_IP_ADDRESS} \
+    --set k8sServiceHost="${KUBERNETES_VIRTUAL_IP_ADDRESS}" \
     --set k8sServicePort=6443 \
     --values cilium-values.yaml
+
+cat >ipam.yaml <<EOF
+apiVersion: "cilium.io/v2alpha1"
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: "blue-pool"
+spec:
+  blocks:
+  - cidr: "$(echo "${KUBERNETES_VIRTUAL_IP_ADDRESS}" | awk -F "." '{ printf "%s.%s.%s.128/28", $1,$2,$3 }')"
+EOF
 
 kubectl apply -f ipam.yaml
 

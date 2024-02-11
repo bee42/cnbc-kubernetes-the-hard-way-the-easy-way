@@ -17,15 +17,17 @@ function get_arch() {
   esac
 }
 
+ARCH="${$(get_arch):-amd64}"
+
 if ! grep 'worker-1-k8s' /etc/hosts &> /dev/null; then
   # shellcheck disable=SC2002
   cat multipass-hosts | sudo tee -a /etc/hosts
 fi
 
 if [[ ! -x $(command -v etcd) || ! -x $(command -v etcdctl) ]]; then
-  tar -xvf etcd-v"${ETCD_VERSION}"-linux-$(get_arch).tar.gz
-  sudo mv etcd-v"${ETCD_VERSION}"-linux-$(get_arch)/etcd* /usr/local/bin/
-  rm -rf etcd-v"${ETCD_VERSION}"-linux-$(get_arch).tar.gz etcd-v"${ETCD_VERSION}"-linux-$(get_arch)/
+  tar -xvf etcd-v"${ETCD_VERSION}"-linux-"${ARCH}".tar.gz
+  sudo mv etcd-v"${ETCD_VERSION}"-linux-"${ARCH}"/etcd* /usr/local/bin/
+  rm -rf etcd-v"${ETCD_VERSION}"-linux-"${ARCH}".tar.gz etcd-v"${ETCD_VERSION}"-linux-"${ARCH}"/
 fi
 
 if [[ ! -f /etc/etcd/kubernetes.pem || ! -f /etc/etcd/kubernetes-key.pem ]]; then
