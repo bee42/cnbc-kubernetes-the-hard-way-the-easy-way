@@ -5,6 +5,8 @@ Creates a Single Controller Kubernetes cluster using
 and
 [cilium](https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/#install-cilium)
 
+![Kubernetes The Hard Way](./img/Kubernetes-The-Hard-Way-bee42-edition.png)
+
 Inspired and fork from
 
 - [kelseyhightower/kubernetes-the-hard-way](https://github.com/kelseyhightower/kubernetes-the-hard-way)
