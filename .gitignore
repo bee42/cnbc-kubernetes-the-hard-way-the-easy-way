@@ -15,3 +15,4 @@
 01-config-files/downloads/kube-scheduler
 01-config-files/downloads/kubectl
 01-config-files/downloads/kubelet
+05-networking/ipam.yaml

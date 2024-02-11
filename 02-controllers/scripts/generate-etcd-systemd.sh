@@ -17,7 +17,7 @@ function get_arch() {
   esac
 }
 
-ARCH="${$(get_arch):-amd64}"
+ARCH="$(get_arch)"
 
 if ! grep 'worker-1-k8s' /etc/hosts &> /dev/null; then
   # shellcheck disable=SC2002

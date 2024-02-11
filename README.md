@@ -17,25 +17,16 @@ All scripts are available to learn how it is built.
 ## Specs
 
 - Ubuntu 22.04
-- Kubernetes 1.28.6
-  - https://kubernetes.io/releases/
-- etcd 3.5.12
-  - https://github.com/etcd-io/etcd/releases
-- containerd 1.7.13
-  - https://github.com/containerd/containerd/releases
-- cni plugins 1.4.0
-  - https://github.com/containernetworking/plugins/releases
-- cilium 1.15.0 (via helm chart)
-  - https://github.com/cilium/cilium/releases
-- coredns 1.29.0 (via helm chart)
-  - https://github.com/coredns/helm/blob/master/charts/coredns/Chart.yaml
-  - 1.11.1
-    - https://github.com/coredns/coredns/releases
-- nerdctl 1.7.3 (start registry and mirror)
-  - https://github.com/containerd/nerdctl/releases
-- metrics server (3.12.0)
-  - https://github.com/kubernetes-sigs/metrics-server
-  - https://artifacthub.io/packages/helm/metrics-server/metrics-server
+- [Kubernetes 1.28.6](https://kubernetes.io/releases/)
+- [etcd 3.5.12](https://github.com/etcd-io/etcd/releases)
+- [containerd 1.7.13](https://github.com/containerd/containerd/releases}
+- [cni plugins 1.4.0](https://github.com/containernetworking/plugins/releases)
+- [cilium 1.15.0 (via helm chart)](https://github.com/cilium/cilium/releases)
+- [coredns 1.29.0 (via helm chart)](https://github.com/coredns/helm/blob/master/charts/coredns/Chart.yaml)
+- [Release coredns 1.11.1](https://github.com/coredns/coredns/releases)
+- [nerdctl 1.7.3 (start registry and mirror)](https://github.com/containerd/nerdctl/releases)
+- [Metrics server (3.12.0)](https://github.com/kubernetes-sigs/metrics-server)
+- [Metrics Server Chart](https://artifacthub.io/packages/helm/metrics-server/metrics-server)
 
 ## Requirements
 
@@ -219,7 +210,7 @@ workers
 
 ### Cilium
 
-* https://docs.cilium.io/en/stable/operations/system_requirements/#admin-system-reqs
+- [Cilium Docs](https://docs.cilium.io/en/stable/operations/system_requirements/#admin-system-reqs)
 
 ```shell
 mount bpffs /sys/fs/bpf -t bpf
@@ -227,48 +218,46 @@ mount bpffs /sys/fs/bpf -t bpf
 
 ## FAQ
 
-* Why kube-proxy is needed at worker nodes?
-  * https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/
-  * isn't needed
-  * use L2 setup the 05-networking and disable kube-proxy setup at worker!
-* Start a registry and mirror to start deplopment
-  * start with nerdctl compose up :)
-* Why all certs starts with the ca-config...
-  * missing kube-scheduler 10259 client-server cert
-    * --tls-cert-file string
-    * --tls-private-key
-    * better only localhst access 
-      * --bind-address string     Default: 0.0.0.0
-* Start fluxcd to create a PAAS
-  * simple git-server
-  * external DNS + core dns + internal etcd
-  * Cert Manager + intermediated CA
-  * use cilium ingress
-  * metrics server
-  * CSI NFS Storage Provisioner
-* Test HA Setup with kube-vip
-  * Multiple Contoller
-  * API Server VIP
-  * kube-vip
-* Backup
-  * etcd database
-  * velero
-* Buildkitd server
-* Registry with TLS Cert and AUTH
-  * Harbor
-  * Helm Chart
-* Setup a CI Testing System
-  * MACOS - Parallels VM?
-  * Ubuntu + Micro VM's
-  * Build at your own Hardware
-* Gitlab/CI vs github actions
+- Why kube-proxy is needed at worker nodes?
+  - [Cilium without KubeProxy](https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/)
+  - isn't needed
+  - use L2 setup the 05-networking and disable kube-proxy setup at worker!
+- Start a registry and mirror to start deplopment
+  - start with nerdctl compose up :)
+- Why all certs starts with the ca-config...
+  - missing kube-scheduler 10259 client-server cert
+    - `--tls-cert-file string`
+    - `--tls-private-key`
+    - better only localhst access 
+      - `--bind-address string     Default: 0.0.0.0``
+- Start fluxcd to create a PAAS
+  - simple git-server
+  - external DNS + core dns + internal etcd
+  - Cert Manager + intermediated CA
+  - use cilium ingress
+  - metrics server
+  - CSI NFS Storage Provisioner
+- Test HA Setup with kube-vip
+  - Multiple Contoller
+  - API Server VIP
+  - kube-vip
+- Backup
+  - etcd database
+  - velero
+- Buildkitd server
+- Registry with TLS Cert and AUTH
+  - Harbor
+  - Helm Chart
+- Setup a CI Testing System
+  - MACOS - Parallels VM?
+  - Ubuntu + Micro VM's
+  - Build at your own Hardware
+- Gitlab/CI vs github actions
 
 ## Related links
 
-
 - [multipass /etc/hosts](https://github.com/canonical/multipass/issues/853#issuecomment-630097263)
-- <https://www.youtube.com/playlist?list=PLC6M23w-Wn5mA_bomV6YVB5elNw7IsHt5>
-- [Kubernetes HA with kubeadm](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/
+- [Kubernetes HA with kubeadm](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/)
 - [CNI Network with Cilium](https://cilium.io)
 - [Kubernetes-Tutorials](https://github.com/Albertchong/Kubernetes-Tutorials/)
 
