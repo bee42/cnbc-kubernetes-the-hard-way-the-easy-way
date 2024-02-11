@@ -26,7 +26,7 @@ function get_arch() {
 if ! grep 'controller-k8s' /etc/hosts &> /dev/null; then
   # shellcheck disable=SC2002
   cat multipass-hosts | sudo tee -a /etc/hosts
-  echo "${REGISTRY_IP} cnbc-mirror cnbc-registry" >>/etc/hosts
+  sudo /bin/sh -c "echo \"${REGISTRY_IP} cnbc-mirror cnbc-registry\" >>/etc/hosts"
 fi
 
 if ! command -v socat &> /dev/null || ! command -v conntrack &> /dev/null || ! command -v ipset &> /dev/null; then
