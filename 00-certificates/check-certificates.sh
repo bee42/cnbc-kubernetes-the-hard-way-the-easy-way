@@ -14,7 +14,7 @@ function check_gru_certs() {
   declare -a MISSING=()
   # Ensure dependencies are present
   for i in "${GRUS_CERTS[@]}"; do
-    if ! -f "${i}" ; then
+    if [[ ! -f "${i}" ]] ; then
       MISSING+=("${i}")
     fi
   done
@@ -27,7 +27,7 @@ function check_minion_certs() {
   declare -a MISSING=()
   # Ensure dependencies are present
   for i in "${MINIONS_CERTS[@]}"; do
-    if ! -f "${i}" ; then
+    if [[ ! -f "${i}" ]] ; then
       MISSING+=("${i}")
     fi
   done
