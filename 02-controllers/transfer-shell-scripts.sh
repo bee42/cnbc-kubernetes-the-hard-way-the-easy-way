@@ -12,3 +12,9 @@ for instance in $(multipass list | grep 'controller' | awk '{ print $1 }'); do
     transfer_file "${file}" "${instance}"
   done
 done
+
+for instance in $(multipass list | grep 'controller' | awk '{ print $1 }'); do
+  for file in ./*/*.yaml; do
+    transfer_file "${file}" "${instance}"
+  done
+done

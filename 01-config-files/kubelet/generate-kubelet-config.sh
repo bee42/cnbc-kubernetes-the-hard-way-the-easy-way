@@ -8,7 +8,7 @@ KUBERNETES_VIRTUAL_IP_ADDRESS="$(multipass list | grep 'controller' | awk '{ pri
 
 for instance in $(multipass list | grep 'worker' | awk '{ print $1 }'); do
   kubectl config set-cluster kubernetes-the-hard-way \
-    --certificate-authority=../../00-certificates/00-Certificate-Authority/ca.pem \
+    --certificate-authority=../../00-certificates/00-Certificate-Authority/kubernetes-ca.pem \
     --embed-certs=true \
     --server=https://"${KUBERNETES_VIRTUAL_IP_ADDRESS}":6443 \
     --kubeconfig="${instance}".kubeconfig

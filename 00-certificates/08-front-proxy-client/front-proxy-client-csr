@@ -1,0 +1,16 @@
+{
+  "CN": "front-proxy-client",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "DE",
+      "L": "Bochum",
+      "O": "front-proxy-client",
+      "OU": "Kubernetes The Hard Way",
+      "ST": "NRW"
+    }
+  ]
+}

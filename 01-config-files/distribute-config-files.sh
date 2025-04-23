@@ -39,7 +39,7 @@ declare -a REIGSTRY_FILES=(
   "./downloads/nerdctl-full-${NERDCTL_VERSION}-linux-$(get_arch).tar.gz"
 )
 
-multipass list | grep -E -v "Name|\-\-" | grep "k8s" | awk '{var=sprintf("%s\t%s",$3,$1); print var}' > multipass-hosts
+multipass list | grep -E -v "Name|\-\-" | grep "cnbc-k8s" | awk '{var=sprintf("%s\t%s",$3,$1); print var}' > multipass-hosts
 
 for file in ./*/*.sh; do
   cd "$(dirname ./"${file}")" || exit

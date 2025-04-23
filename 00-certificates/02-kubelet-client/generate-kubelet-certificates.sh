@@ -7,6 +7,11 @@ CITY="${2:-Bochum}"
 STATE="${3:-NRW}"
 
 for instance in $(multipass list | grep 'worker' | awk '{ print $1 }'); do
+
+echo "Generating kubelet node client and server certificate for ${instance}"
+
+INTERNAL_IP="$(multipass info "${instance}" | grep 'IPv4' | awk '{ print $2 }')"
+
 cat > "${instance}"-csr.json <<EOF
 {
   "CN": "system:node:${instance}",
@@ -14,6 +19,10 @@ cat > "${instance}"-csr.json <<EOF
     "algo": "rsa",
     "size": 2048
   },
+  "hosts": [
+    "${instance}",
+    "${INTERNAL_IP}"
+  ],
   "names": [
     {
       "C": "${COUNTRY}",
@@ -26,13 +35,14 @@ cat > "${instance}"-csr.json <<EOF
 }
 EOF
 
-INTERNAL_IP="$(multipass info "${instance}" | grep 'IPv4' | awk '{ print $2 }')"
-
+# Generate the kubelet client and server certificate
+# The certificate is signed by the Kubernetes CA
+# The certificate is used by the kubelet to authenticate to the Kubernetes API server
 cfssl gencert \
-  -ca=../00-Certificate-Authority/ca.pem \
-  -ca-key=../00-Certificate-Authority/ca-key.pem \
-  -config=../00-Certificate-Authority/client-server-config.json \
-  -hostname="${instance}","${INTERNAL_IP}" \
-  -profile=kubernetes \
+  -ca=../00-Certificate-Authority/kubernetes-ca.pem \
+  -ca-key=../00-Certificate-Authority/kubernetes-ca-key.pem \
+  -config=../00-Certificate-Authority/kubernetes-ca-config.json \
+  -profile=worker \
   "${instance}"-csr.json | cfssljson -bare "${instance}"
+
 done

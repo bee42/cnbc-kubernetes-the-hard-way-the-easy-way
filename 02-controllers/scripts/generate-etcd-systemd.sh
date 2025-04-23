@@ -19,7 +19,7 @@ function get_arch() {
 
 ARCH="$(get_arch)"
 
-if ! grep 'worker-1-k8s' /etc/hosts &> /dev/null; then
+if ! grep 'worker-1-cnbc-k8s' /etc/hosts &> /dev/null; then
   # shellcheck disable=SC2002
   cat multipass-hosts | sudo tee -a /etc/hosts
 fi
@@ -30,10 +30,10 @@ if [[ ! -x $(command -v etcd) || ! -x $(command -v etcdctl) ]]; then
   rm -rf etcd-v"${ETCD_VERSION}"-linux-"${ARCH}".tar.gz etcd-v"${ETCD_VERSION}"-linux-"${ARCH}"/
 fi
 
-if [[ ! -f /etc/etcd/kubernetes.pem || ! -f /etc/etcd/kubernetes-key.pem ]]; then
+if [[ ! -f /etc/etcd/etcd-server.pem || ! -f /etc/etcd/etcd-server-key.pem ]]; then
   sudo mkdir -p /etc/etcd /var/lib/etcd
   sudo chmod -R 0700 /var/lib/etcd
-  sudo cp ca.pem kubernetes-key.pem kubernetes.pem /etc/etcd/
+  sudo cp etcd-ca.pem etcd-server-key.pem etcd-server.pem etcd-peer.pem etcd-peer-key.pem etcd-healthcheck-client.pem etcd-healthcheck-client-key.pem /etc/etcd/
 fi
 
 declare -a INTERNAL_IPS=() COMPUTER_IPV4_ADDRESSES=()
@@ -62,12 +62,12 @@ Documentation=https://etcd.io
 Type=notify
 ExecStart=/usr/local/bin/etcd \\
   --name ${ETCD_NAME} \\
-  --cert-file=/etc/etcd/kubernetes.pem \\
-  --key-file=/etc/etcd/kubernetes-key.pem \\
-  --peer-cert-file=/etc/etcd/kubernetes.pem \\
-  --peer-key-file=/etc/etcd/kubernetes-key.pem \\
-  --trusted-ca-file=/etc/etcd/ca.pem \\
-  --peer-trusted-ca-file=/etc/etcd/ca.pem \\
+  --cert-file=/etc/etcd/etcd-server.pem \\
+  --key-file=/etc/etcd/etcd-server-key.pem \\
+  --peer-cert-file=/etc/etcd/etcd-peer.pem \\
+  --peer-key-file=/etc/etcd/etcd-peer-key.pem \\
+  --trusted-ca-file=/etc/etcd/etcd-ca.pem \\
+  --peer-trusted-ca-file=/etc/etcd/etcd-ca.pem \\
   --peer-client-cert-auth \\
   --client-cert-auth \\
   --initial-advertise-peer-urls https://${COMPUTER_IPV4_ADDRESSES[0]}:2380 \\
@@ -94,6 +94,6 @@ echo 'Listing etcd members'
 
 sudo ETCDCTL_API=3 etcdctl member list \
   --endpoints=https://127.0.0.1:2379 \
-  --cacert=/etc/etcd/ca.pem \
-  --cert=/etc/etcd/kubernetes.pem \
-  --key=/etc/etcd/kubernetes-key.pem
+  --cacert=/etc/etcd/etcd-ca.pem \
+  --cert=/etc/etcd/etcd-healthcheck-client.pem \
+  --key=/etc/etcd/etcd-healthcheck-client-key.pem

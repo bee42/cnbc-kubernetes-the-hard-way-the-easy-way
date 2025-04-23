@@ -8,6 +8,7 @@ DNS_CLUSTER_IP="${3}"
 REGISTRY_IP="${4}"
 KUBE_PROXY_ENABLED="${5}"
 CLUSTER_CIDR="${6}"
+CLUSTER_DOMAIN="${7:-cluster.local}"
 
 function get_arch() {
   case "$(uname -m)" in
@@ -23,7 +24,7 @@ function get_arch() {
   esac
 }
 
-if ! grep 'controller-k8s' /etc/hosts &> /dev/null; then
+if ! grep 'controller-cnbc-k8s' /etc/hosts &> /dev/null; then
   # shellcheck disable=SC2002
   cat multipass-hosts | sudo tee -a /etc/hosts
   sudo /bin/sh -c "echo \"${REGISTRY_IP} cnbc-mirror cnbc-registry\" >>/etc/hosts"
@@ -127,7 +128,7 @@ EOF
 
   sudo mv "${HOSTNAME}"-key.pem "${HOSTNAME}".pem /var/lib/kubelet/
   sudo mv "${HOSTNAME}".kubeconfig /var/lib/kubelet/kubeconfig
-  sudo mv ca.pem /var/lib/kubernetes/
+  sudo mv kubernetes-ca.pem /var/lib/kubernetes/
 
   cat <<EOF | sudo tee /var/lib/kubelet/kubelet-config.yaml
 kind: KubeletConfiguration
@@ -138,10 +139,10 @@ authentication:
   webhook:
     enabled: true
   x509:
-    clientCAFile: "/var/lib/kubernetes/ca.pem"
+    clientCAFile: "/var/lib/kubernetes/kubernetes-ca.pem"
 authorization:
   mode: Webhook
-clusterDomain: "cluster.local"
+clusterDomain: "${CLUSTER_DOMAIN}"
 clusterDNS:
   - "${DNS_CLUSTER_IP}"
 resolvConf: "/run/systemd/resolve/resolv.conf"
@@ -149,6 +150,7 @@ runtimeRequestTimeout: "15m"
 tlsCertFile: "/var/lib/kubelet/${HOSTNAME}.pem"
 tlsPrivateKeyFile: "/var/lib/kubelet/${HOSTNAME}-key.pem"
 registerNode: true
+containerRuntimeEndpoint: "unix:///var/run/containerd/containerd.sock"
 EOF
 
 cat <<EOF | sudo tee /etc/systemd/system/kubelet.service
@@ -161,7 +163,6 @@ Requires=containerd.service
 [Service]
 ExecStart=/usr/local/bin/kubelet \\
   --config=/var/lib/kubelet/kubelet-config.yaml \\
-  --container-runtime-endpoint=unix:///var/run/containerd/containerd.sock \\
   --kubeconfig=/var/lib/kubelet/kubeconfig \\
   --v=2
 Restart=on-failure
@@ -228,7 +229,7 @@ done
 
 function get_node_status() {
   kubectl get nodes \
-    --kubeconfig /var/lib/kubelet/kubeconfig | \
+    --kubeconfig /var/lib/kubelet/kubeconfig ${HOSTNAME} | \
     grep "${HOSTNAME}" | awk '{ print $2 }'
 }
 

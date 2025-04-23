@@ -15,4 +15,5 @@
 01-config-files/downloads/kube-scheduler
 01-config-files/downloads/kubectl
 01-config-files/downloads/kubelet
-05-networking/ipam.yaml
+05-networking/cilium-ipam.yaml
+05-networking/cilium-l2-policy.yaml

@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+    k8s-app: konnectivity-agent
+  namespace: kube-system
+  name: konnectivity-agent
+spec:
+  selector:
+    matchLabels:
+      k8s-app: konnectivity-agent
+  template:
+    metadata:
+      labels:
+        k8s-app: konnectivity-agent
+#      annotations:
+#        scheduler.alpha.kubernetes.io/critical-pod: ''
+#        seccomp.security.alpha.kubernetes.io/pod: 'docker/default'
+    spec:
+      priorityClassName: system-cluster-critical
+      tolerations:
+        - key: "CriticalAddonsOnly"
+          operator: "Exists"
+      containers:
+        - image: registry.k8s.io/kas-network-proxy/proxy-agent:v0.32.0
+          name: konnectivity-agent
+          command: ["/proxy-agent"]
+          args: [
+                  "--logtostderr=true",
+                  "--ca-cert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+                  # Since the konnectivity server runs with hostNetwork=true,
+                  # this is the IP address of the master machine.
+                  "--proxy-server-host=${KUBERNETES_VIRTUAL_IP_ADDRESS}",
+                  "--proxy-server-port=8091",
+                  "--health-server-port=8092",
+                  "--admin-server-port=8093",
+                  "--service-account-token-path=/var/run/secrets/tokens/konnectivity-agent-token"
+                  ]
+          volumeMounts:
+            - mountPath: /var/run/secrets/tokens
+              name: konnectivity-agent-token
+          livenessProbe:
+            httpGet:
+              port: 8092
+              path: /healthz
+            initialDelaySeconds: 15
+            timeoutSeconds: 15
+      serviceAccountName: konnectivity-agent
+      volumes:
+        - name: konnectivity-agent-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: konnectivity-agent-token
+                  audience: system:konnectivity-server

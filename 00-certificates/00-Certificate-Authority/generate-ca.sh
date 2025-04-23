@@ -2,72 +2,54 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-VALID_IN_YEARS="${1:-1}"
+COUNTRY="${1:-DE}"
+CITY="${2:-Bochum}"
+STATE="${3:-NRW}"
+CLUSTER_DOAMIN="${4:-cluster.local}"
+
+VALID_IN_YEARS="${5:-1}"
 #DAYS_IN_YEAR='365'
 #HOURS_IN_DAY='24'
 HOURS_IN_YEAR='8760'
 
 # shellcheck disable=SC2219
 let "VALID_IN_HOURS = ${VALID_IN_YEARS} * ${HOURS_IN_YEAR}"
+let "CA_EXPIRY_IN_HOURS = ${VALID_IN_HOURS} * 3"
 
-cat > ca-config.json <<EOF
+echo 'Create the root CA'
+
+cat << EOF > root-ca-config.json
 {
   "signing": {
-    "default": {
-      "expiry": "${VALID_IN_HOURS}h"
-    },
     "profiles": {
-      "kubernetes": {
-        "usages": ["signing", "key encipherment", "server auth", "client auth"],
-        "expiry": "${VALID_IN_HOURS}h"
+      "intermediate": {
+        "usages": [
+          "signature",
+          "digital-signature",
+          "cert sign",
+          "crl sign"
+        ],
+        "expiry": "${CA_EXPIRY_IN_HOURS}h",
+        "ca_constraint": {
+          "is_ca": true,
+          "max_path_len": 0,
+          "max_path_len_zero": true
+        }
       }
     }
   }
 }
 EOF
 
-cat >client-config.json <<EOF
+cat << EOF > root-ca-csr.json
 {
-  "signing": {
-    "default": {
-      "expiry": "${VALID_IN_HOURS}h"
-    },
-    "profiles": {
-      "kubernetes": {
-        "usages": ["client auth"],
-        "expiry": "${VALID_IN_HOURS}h"
-      }
-    }
-  }
-}
-EOF
-
-cat >client-server-config.json <<EOF
-{
-  "signing": {
-    "default": {
-      "expiry": "${VALID_IN_HOURS}h"
-    },
-    "profiles": {
-      "kubernetes": {
-        "usages": ["server auth", "client auth"],
-        "expiry": "${VALID_IN_HOURS}h"
-      }
-    }
-  }
-}
-EOF
-
-COUNTRY="${2:-DE}"
-CITY="${3:-Bochum}"
-STATE="${4:-NRW}"
-
-cat > ca-csr.json <<EOF
-{
-  "CN": "Kubernetes",
+  "CN": "cnbc-root-ca",
   "key": {
     "algo": "rsa",
     "size": 2048
+  },
+  "ca": {
+    "expiry": "${VALID_IN_HOURS}h"
   },
   "names": [
     {
@@ -81,4 +63,163 @@ cat > ca-csr.json <<EOF
 }
 EOF
 
-cfssl gencert -initca ca-csr.json | cfssljson -bare ca
+cfssl genkey -initca root-ca-csr.json | cfssljson -bare ca
+cfssl print-defaults config root-ca-config.json
+
+echo 'Create the Kubernetes Intermediate CA'
+
+cat << EOF > kubernetes-ca-config.json
+{
+    "signing": {
+        "profiles": {
+            "www": {
+                "expiry": "${VALID_IN_HOURS}h",
+                "usages": [
+                    "signing",
+                    "key encipherment",
+                    "server auth"
+                ]
+            },
+            "client": {
+                "expiry": "${VALID_IN_HOURS}h",
+                "usages": [
+                    "signing",
+                    "key encipherment",
+                    "client auth"
+                ]
+            },
+            "worker": {
+                "expiry": "${VALID_IN_HOURS}h",
+                "usages": [
+                    "signing",
+                    "key encipherment",
+                    "server auth",
+                    "client auth"
+                ]
+            }
+        }
+    }
+}
+EOF
+
+cat << EOF > kubernetes-ca-csr.json
+{
+    "CN": "kubernetes-ca",
+    "key": {
+        "algo": "rsa",
+        "size": 2048
+    },
+    "ca": {
+        "expiry": "${VALID_IN_HOURS}h"
+    },
+    "names": [
+    {
+      "C": "${COUNTRY}",
+      "L": "${CITY}",
+      "O": "bee42 solutions gmbh",
+      "OU": "CNBC",
+      "ST": "${STATE}"
+    }
+  ]
+}
+EOF
+
+cfssl genkey -initca kubernetes-ca-csr.json | cfssljson -bare kubernetes-ca
+cfssl sign -ca ca.pem -ca-key ca-key.pem -config root-ca-config.json -profile intermediate kubernetes-ca.csr | cfssljson -bare kubernetes-ca
+cfssl print-defaults config kubernetes-ca-config.json
+
+echo 'Create the Kubernetes Front Proxy Intermediate CA'
+
+cat << EOF > kubernetes-front-proxy-ca-csr.json
+{
+    "CN": "kubernetes-front-proxy-ca",
+    "key": {
+        "algo": "rsa",
+        "size": 2048
+    },
+    "ca": {
+        "expiry": "${VALID_IN_HOURS}h"
+    },
+    "names": [
+    {
+      "C": "${COUNTRY}",
+      "L": "${CITY}",
+      "O": "bee42 solutions gmbh",
+      "OU": "CNBC",
+      "ST": "${STATE}"
+    }
+  ]
+}
+EOF
+
+cfssl genkey -initca kubernetes-front-proxy-ca-csr.json | cfssljson -bare kubernetes-front-proxy-ca
+cfssl sign -ca ca.pem -ca-key ca-key.pem -config root-ca-config.json -profile intermediate kubernetes-front-proxy-ca.csr | cfssljson -bare kubernetes-front-proxy-ca
+cfssl print-defaults config >kubernetes-front-proxy-ca-config.json
+
+echo 'Create the etcd Intermediate CA'
+
+mkdir -p etcd-ca
+cd etcd-ca
+
+cat << EOF > etcd-ca-config.json
+{
+    "signing": {
+        "profiles": {
+            "server": {
+                "expiry": "${VALID_IN_HOURS}h",
+                "usages": [
+                    "signing",
+                    "key encipherment",
+                    "server auth"
+                ]
+            },
+            "client": {
+                "expiry": "${VALID_IN_HOURS}h",
+                "usages": [
+                    "signing",
+                    "key encipherment",
+                    "client auth"
+                ]
+            },
+            "peer": {
+                "expiry": "${VALID_IN_HOURS}h",
+                "usages": [
+                    "signing",
+                    "key encipherment",
+                    "server auth",
+                    "client auth"
+                ]
+            }
+        }
+    }
+}
+EOF
+
+cat << EOF > etcd-ca-csr.json
+{
+    "CN": "etcd-ca",
+    "key": {
+        "algo": "rsa",
+        "size": 2048
+    },
+    "ca": {
+        "expiry": "${CA_EXPIRY_IN_HOURS}h"
+    },
+    "names": [
+    {
+      "C": "${COUNTRY}",
+      "L": "${CITY}",
+      "O": "bee42 solutions gmbh",
+      "OU": "CNBC",
+      "ST": "${STATE}"
+    }
+  ]
+}
+EOF
+
+cfssl genkey -initca etcd-ca-csr.json | cfssljson -bare etcd-ca
+cfssl sign -ca ../ca.pem -ca-key ../ca-key.pem -config ../root-ca-config.json -profile intermediate etcd-ca.csr | cfssljson -bare etcd-ca
+cfssl print-defaults config etcd-ca-config.json
+
+cd ..
+

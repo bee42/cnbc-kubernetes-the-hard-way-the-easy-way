@@ -11,14 +11,26 @@ ARCH=${ARCH:-$(get_arch)}
 # Download kubernetes components once then distribute them to controller(s) and
 # agents
 msg_info 'Downloading kubernetes components'
-curl -fSL --remote-name-all --ssl-reqd \
-  "https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/${ARCH}/kube-apiserver" \
-  "https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/${ARCH}/kube-controller-manager" \
-  "https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/${ARCH}/kube-scheduler" \
-  "https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/${ARCH}/kubectl" \
-  "https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-${ARCH}.tar.gz" \
-  "https://github.com/containernetworking/plugins/releases/download/v${CNI_PLUGINS_VERSION}/cni-plugins-linux-${ARCH}-v${CNI_PLUGINS_VERSION}.tgz" \
-  "https://github.com/containerd/containerd/releases/download/v${CONTAINERD_VERSION}/cri-containerd-${CONTAINERD_VERSION}-linux-${ARCH}.tar.gz" \
-  "https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/nerdctl-full-${NERDCTL_VERSION}-linux-${ARCH}.tar.gz" \
-  "https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/${ARCH}/kube-proxy" \
-  "https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/${ARCH}/kubelet"
+# Define files and URLs 
+declare -A FILES
+
+FILES=(
+  ["kube-apiserver"]="https://dl.k8s.io/release/v${KUBERNETES_VERSION}/bin/linux/${ARCH}/kube-apiserver"
+  ["kube-controller-manager"]="https://dl.k8s.io/release/v${KUBERNETES_VERSION}/bin/linux/${ARCH}/kube-controller-manager"
+  ["kube-scheduler"]="https://dl.k8s.io/release/v${KUBERNETES_VERSION}/bin/linux/${ARCH}/kube-scheduler"
+  ["kubectl"]="https://dl.k8s.io/release/v${KUBERNETES_VERSION}/bin/linux/${ARCH}/kubectl"
+  ["kube-proxy"]="https://dl.k8s.io/release/v${KUBERNETES_VERSION}/bin/linux/${ARCH}/kube-proxy"
+  ["kubelet"]="https://dl.k8s.io/release/v${KUBERNETES_VERSION}/bin/linux/${ARCH}/kubelet"
+  ["etcd-v${ETCD_VERSION}-linux-${ARCH}.tar.gz"]="https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-${ARCH}.tar.gz"
+  ["cni-plugins-linux-${ARCH}-v${CNI_PLUGINS_VERSION}.tgz"]="https://github.com/containernetworking/plugins/releases/download/v${CNI_PLUGINS_VERSION}/cni-plugins-linux-${ARCH}-v${CNI_PLUGINS_VERSION}.tgz"
+  ["cri-containerd-${CONTAINERD_VERSION}-linux-${ARCH}.tar.gz"]="https://github.com/containerd/containerd/releases/download/v${CONTAINERD_VERSION}/cri-containerd-${CONTAINERD_VERSION}-linux-${ARCH}.tar.gz"
+  ["nerdctl-full-${NERDCTL_VERSION}-linux-${ARCH}.tar.gz"]="https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/nerdctl-full-${NERDCTL_VERSION}-linux-${ARCH}.tar.gz"
+)
+
+for file in "${!FILES[@]}"; do
+  url="${FILES[$file]}"
+  if -f $file ; then
+    msg_info "Downloading $file from $url"
+    curl -fSL --ssl-reqd -o "$file" "$url"
+  fi
+done

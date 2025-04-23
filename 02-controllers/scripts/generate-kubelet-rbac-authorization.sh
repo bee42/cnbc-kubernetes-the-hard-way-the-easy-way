@@ -40,9 +40,9 @@ roleRef:
 subjects:
   - apiGroup: rbac.authorization.k8s.io
     kind: User
-    name: kubernetes
+    name: kube-apiserver-kubelet-client
 EOF
 
 echo 'the following is not related to rbac'
 
-curl --cacert /var/lib/kubernetes/ca.pem 'https://127.0.0.1:6443/version'
+curl --cacert /var/lib/kubernetes/kubernetes-ca.pem 'https://127.0.0.1:6443/version'

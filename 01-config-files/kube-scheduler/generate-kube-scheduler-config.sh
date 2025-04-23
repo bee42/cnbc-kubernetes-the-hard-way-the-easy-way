@@ -3,7 +3,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 kubectl config set-cluster kubernetes-the-hard-way \
-  --certificate-authority=../../00-certificates/00-Certificate-Authority/ca.pem \
+  --certificate-authority=../../00-certificates/00-Certificate-Authority/kubernetes-ca.pem \
   --embed-certs=true \
   --server=https://127.0.0.1:6443 \
   --kubeconfig=kube-scheduler.kubeconfig

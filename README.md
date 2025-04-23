@@ -9,25 +9,92 @@ and
 
 Inspired and fork from
 
-- [kelseyhightower/kubernetes-the-hard-way](https://github.com/kelseyhightower/kubernetes-the-hard-way)
-- [kubernetes-the-hard-way-the-easy-way)](https://github.com/missingcharacter/kubernetes-the-hard-way-the-easy-way)
+- [Project kelseyhightower/kubernetes-the-hard-way](https://github.com/kelseyhightower/kubernetes-the-hard-way)
+- [Project kubernetes-the-hard-way-the-easy-way)](https://github.com/missingcharacter/kubernetes-the-hard-way-the-easy-way)
+- [Create Kubernetes Trust](https://gist.github.com/detiber/81b515df272f5911959e81e39137a8bb)
 
 All scripts are available to learn how it is built.
 
 ## Specs
 
 - Ubuntu 22.04
-- [Kubernetes 1.28.6](https://kubernetes.io/releases/)
-- [etcd 3.5.12](https://github.com/etcd-io/etcd/releases)
-- [containerd 1.7.13](https://github.com/containerd/containerd/releases)
-- [cni plugins 1.4.0](https://github.com/containernetworking/plugins/releases)
-- [cilium 1.15.0 (via helm chart)](https://github.com/cilium/cilium/releases)
-- [coredns 1.29.0 (via helm chart)](https://github.com/coredns/helm/blob/master/charts/coredns/Chart.yaml)
-- [Release coredns 1.11.1](https://github.com/coredns/coredns/releases)
-- [nerdctl 1.7.3 (start registry and mirror)](https://github.com/containerd/nerdctl/releases)
-- [Metrics server (3.12.0)](https://github.com/kubernetes-sigs/metrics-server)
-- [Metrics Server Chart](https://artifacthub.io/packages/helm/metrics-server/metrics-server)
+- [Kubernetes 1.32.3](https://kubernetes.io/releases/)
+- [etcd 3.5.21](https://github.com/etcd-io/etcd/releases)
+- [containerd 1.7.27](https://github.com/containerd/containerd/releases)
+- [cni plugins 1.6.2](https://github.com/containernetworking/plugins/releases)
+- [cilium 1.17.2 (via helm chart)](https://github.com/cilium/cilium/releases)
+- [coredns 1.39.2 (via helm chart)](https://github.com/coredns/helm/blob/master/charts/coredns/Chart.yaml)
+- [Release coredns 1.12.1](https://github.com/coredns/coredns/releases)
+- [nerdctl 1.7.7 (start registry and mirror)](https://github.com/containerd/nerdctl/releases)
+- [Metrics server (0.7.2)](https://github.com/kubernetes-sigs/metrics-server)
+- [Metrics Server Chart (3.12.2)](https://artifacthub.io/packages/helm/metrics-server/metrics-server)
 
+## Create a dev environment
+
+```shell
+git clone --depth=1 https://github.com/bee42/cnbc-kubernetes-the-hard-way-the-easy-way.git
+cd cnbc-kubernetes-the-hard-way-the-easy-way
+multipass set local.driver=qemu
+multipass launch --name lab-dev --cpus 2 --memory 4G --disk 20G
+multipass mount $(pwd) lab-dev:/home/ubuntu/shared
+multipass shell lab-dev
+```
+
+### ToDo
+
+- [x] Fix immutable download!
+  - [ ] extract konnectivity proxy-server from docker images to setup as systemd
+  - [ ] extract kube-vip to setup as systemd service
+- [ ] optional multipass installation (remove from dependency ixi create vms) 
+- [x] Add remove script multipass instance script
+  - Add label or name prefix to instances
+  - [x] teardown.sh
+  - [x] manualy `multipass delete`
+- [ ] Use Intermediate CA (kubenetes, ETCD, front-proxy)
+- [x] Fix some certs issues
+  - https://gist.github.com/detiber/81b515df272f5911959e81e39137a8bb
+  - create ETCD certs
+  - create Front proxy client certs
+  - Kubelet client certs api-server
+- [ ] Create Docs
+  - A journey of manually steps
+  - Hints of more informations
+    - Certs
+    - Config components
+    - checks
+      - health status
+    - Etcd
+      - Backup/restore
+      - access values
+      - health status
+    - resource encyption 
+- [ ] Fix Metrics server tls, request handling!
+  - https://kubernetes.io/docs/tasks/extend-kubernetes/configure-aggregation-layer/
+- [ ] Update to containerd 2.x
+  - new package content
+  - new registry config
+  - update nerdctl, crictl
+- [ ] Update to docker mirror with creds
+- [ ] Add mirror to containerd registry vm!
+- [ ] Update metrics Server with TLS cert
+- [ ] Add local path proviionier
+- [ ] Add DevContainer
+- [ ] renovate update?
+- [ ] Add Cert-manager, external DNS, cloud flare tunnel
+- [ ] Add kubevip and HA ControlPlane
+  - [ ] extract kube-vip binary
+  - [ ] create a systemd service setup
+  - [ ] config api server and clients (kubelet, cilium, service lb kubernetes) use the vip
+- [ ] Add Headlamp
+- [ ] Update github actions pipeline
+- [ ] Is tls at containerd supported?
+  ```toml
+    [grpc]
+    address = "/run/containerd/containerd.sock"
+    tcp_address = ""
+    tcp_tls_cert = ""
+    tcp_tls_key = ""
+  ```
 ## Requirements
 
 - helm 3+
@@ -58,7 +125,8 @@ All scripts are available to learn how it is built.
   - linux:
 
     ```shell
-    wget https://storage.googleapis.com/kubernetes-release/release/v1.28.6/bin/linux/${ARCH}/kubectl
+    KUBECTL_VERSION=1.32.3
+    wget https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/${ARCH}/kubectl
     chmod +x kubectl
     sudo mv kubectl /usr/local/bin/
     ```
@@ -66,7 +134,8 @@ All scripts are available to learn how it is built.
   - mac:
 
     ```shell
-    curl -o kubectl https://storage.googleapis.com/kubernetes-release/release/v1.28.6/bin/darwin/${ARCH}/kubectl
+    KUBECTL_VERSION=1.32.3
+    curl -o kubectl https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/darwin/${ARCH}/kubectl
     chmod +x kubectl
     sudo mv kubectl /usr/local/bin/
     ```
@@ -76,7 +145,51 @@ All scripts are available to learn how it is built.
 1. Create your machines:
 
    ```shell
+   REGISTRY_MODE=on ./setup.sh
+
+   ./machines.sh
+   ./certs.sh
    ./setup.sh
+   ./config.sh
+  
+   ./controller.sh
+  
+   # check apiserver
+   multipass shell controller-cnbc-k8s
+   kubectl --kubeconfig admin.kubeconfig create deployment nginx --image nginx
+   kubectl --kubeconfig admin.kubeconfig get deployments
+   kubectl --kubeconfig admin.kubeconfig get all
+   # only deployments
+
+   # check etcd with get
+    
+   # check controller manager
+   multipass shell controller-cnbc-k8s
+   kubectl --kubeconfig admin.kubeconfig get rs
+   kubectl --kubeconfig admin.kubeconfig get pods
+  
+   # check controller manager
+   multipass shell controller-cnbc-k8s
+   kubectl --kubeconfig admin.kubeconfig get rs
+   kubectl --kubeconfig admin.kubeconfig get pods
+   kubectl --kubeconfig admin.kubeconfig describe pods
+
+   # check scheduler
+   kubectl --kubeconfig admin.kubeconfig get nodes
+   # start worker
+   ./workers.sh
+   
+   kubectl get pods --kubeconfig /var/lib/kubelet/kubeconfig --field-selector spec.nodeName=$HOSTNAME
+
+   ./kubelet.sh
+
+   kubectl get pods -A
+NAMESPACE   NAME                     READY   STATUS              RESTARTS   AGE
+default     nginx-5869d7778c-4stv6   0/1     ContainerCreating   0          7h58m
+kubectl describe pods -A
+  Warning  FailedCreatePodSandBox  81s   kubelet            Failed to create pod sandbox: rpc error: code = Unknown desc = failed to setup network for sandbox "1079cbdf25bd8a164e735aa990a68b5b525f90818f56f71ed3185cd7d82d9a32": failed to find network info for sandbox "1079cbdf25bd8a164e735aa990a68b5b525f90818f56f71ed3185cd7d82d9a32"
+
+   ./services.sh
    ```
 
 2. Wait a couple of minutes for cilium and coredns to start working
@@ -172,7 +285,7 @@ All scripts are available to learn how it is built.
      awk '{ print $2 }')
    $ curl -I "http://${WORKER_IP}:${NODE_PORT}"
    HTTP/1.1 200 OK
-   Server: nginx/1.25.3
+   Server: nginx/1.27.1
    Date: Thu, 07 Dec 2023 05:28:35 GMT
    Content-Type: text/html
    Content-Length: 615
@@ -200,6 +313,376 @@ All scripts are available to learn how it is built.
 
    ![cilium-hubble-ui](./img/Cilium-Hubble-UI.png)
 
+## Metrics server with tls
+
+References:
+
+- https://ftclausen.github.io/infra/setting_up_k8s_with_metrics_server/
+- https://kubernetes.io/docs/tasks/extend-kubernetes/configure-aggregation-layer/#authentication-flow
+- [Metrics Server Design](https://kubernetes.io/docs/tasks/debug/debug-cluster/resource-metrics-pipeline/)
+- [APIServer Metrics client](https://github.com/kubernetes/metrics)
+- [Prometheus Custom Metrics](https://github.com/kubernetes-sigs/prometheus-adapter)
+
+Questions:
+
+- How generate the metrics-server certs? signed by front-proxy.ca?
+- client adnd requestHeader ca normaly not the same?
+- API-Service use the internal cluster service IP
+  - Controlplane has no access to this network!
+  - Disable metrics server
+  - Create a Loadbalancer Service IP
+Example:
+
+```text
+ /metrics-server
+  --cert-dir=/var/lib/kubernetes
+  --client-ca-file=/var/lib/kubernetes/requestheader-client-ca.crt
+  --kubelet-certificate-authority=/var/lib/kubernetes/ca.pem
+  --requestheader-allowed-names=""
+  --requestheader-client-ca-file=/var/lib/kubernetes/requestheader-client-ca.crt
+  --tls-cert-file=/var/lib/kubernetes/metrics-server.pem
+  --tls-private-key-file=/var/lib/kubernetes/metrics-server-key.pem
+  --requestheader-extra-headers-prefix=X-Remote-Extra-
+  --requestheader-group-headers=X-Remote-Group
+  --requestheader-username-headers=X-Remote-User
+  --logtostderr
+  --v=5
+  --secure-port=8443
+```
+
+```shell
+kubectl -n kube-system create secret tls metrics-proxy \
+  --from-file ca.crt=00-certificate/00-Certificate-Authority/kubernetes-front-proxy-ca.pem \
+  --from-file tls.crt=00-certificate/00-Certificate-Authority/front-proxy-client.pem \
+  --from-file tls.key=00-certificate/00-Certificate-Authority/front-proxy-client-key.pem
+
+  --tls-private-key-file=/var/lib/kubernetes/kubernetes-key.pem \\
+  --proxy-client-cert-file=/var/lib/kubernetes/front-proxy-client.pem \\
+  --proxy-client-key-file=/var/lib/kubernetes/front-proxy-client-key.pem \\
+  --requestheader-allowed-names=front-proxy-client \\
+  --requestheader-client-ca-file=/var/lib/kubernetes/kubernetes-front-proxy-ca.pem \\
+```
+
+```shell
+# access containerLogs
+curl \
+  --cert ./00-certificates/06-kubernetes-api/apiserver-kubelet-client.pem \
+  --key ./00-certificates/06-kubernetes-api/apiserver-kubelet-client-key.pem \
+  --cacert ./00-certificates/00-Certificate-Authority/kubernetes-ca.pem \
+  https://192.168.64.20:10250/containerLogs/kube-system/metrics-server-6cb874ffbc-wjsgn/metrics-server
+
+# get metrics
+curl \
+  --cert ./00-certificates/06-kubernetes-api/apiserver-kubelet-client.pem \
+  --key ./00-certificates/06-kubernetes-api/apiserver-kubelet-client-key.pem \
+  --cacert ./00-certificates/00-Certificate-Authority/kubernetes-ca.pem \
+  https://192.168.64.20:10250/metrics/resource
+```
+
+## konnectivity apiserver -> proxy tunnel to services
+
+- [setup-konnectivity](https://kubernetes.io/docs/tasks/extend-kubernetes/setup-konnectivity/)
+- [apiserver-network-proxy](https://github.com/kubernetes-sigs/apiserver-network-proxy)
+- [network-proxy proposal](https://github.com/kubernetes/enhancements/tree/master/keps/sig-api-machinery/1281-network-proxy#proposal)
+
+```text
+Frontend client =HTTP over GRPC+UDS=> (/tmp/uds-proxy) proxy (:8091) <=GRPC= agent =HTTP=> SimpleHTTPServer(:8000)
+  |                                                                            ^
+  |                                     Tunnel                                 |
+  +----------------------------------------------------------------------------+
+```
+
+Detected version:
+
+```shell
+# development:
+skopeo list-tags docker://gcr.io/k8s-staging-kas-network-proxy/proxy-server
+docker manifest inspect gcr.io/k8s-staging-kas-network-proxy/proxy-server:release-0.32
+# multiarch
+
+# Release:
+skopeo list-tags docker://registry.k8s.io/kas-network-proxy/proxy-server
+skopeo list-tags docker://registry.k8s.io/kas-network-proxy/proxy-agent
+docker manifest inspect registry.k8s.io/kas-network-proxy/proxy-server:v0.32.0
+
+docker container export $(docker container create --name proxy-server registry.k8s.io/kas-network-proxy/proxy-server:v0.32.0) -o proxyserver-0.32.0.tar
+tar -xvf  proxyserver-0.32.0.tar proxy-server
+multipass transfer proxy-server controller-cnbc-k8s:/home/ubuntu
+multipass exec controller-cnbc-k8s sudo mv proxy-server /usr/local/bin
+rm proxyserver-0.32.0.tar
+docker container rm proxy-server
+
+# multiarch
+```
+
+## Coredns
+
+- https://coredns.io/explugins/kubenodes/
+
+coredns config map:
+
+```yaml
+apiVersion: v1
+data:
+  Corefile: |-
+    .:53 {
+        errors
+        health {
+            lameduck 10s
+        }
+        ready
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+            pods insecure
+            fallthrough in-addr.arpa ip6.arpa
+            ttl 30
+        }
+        prometheus 0.0.0.0:9153
+        hosts /etc/coredns/NodeHosts {
+          ttl 60
+          reload 15s
+          fallthrough
+        }
+        forward . /etc/resolv.conf
+        cache 30
+        loop
+        reload
+        loadbalance
+    }
+  NodeHosts: |
+    192.168.64.18   controller-cnbc-k8s
+    192.168.64.19   worker-1-cnbc-k8s
+    192.168.64.20   worker-2-cnbc-k8s
+    192.168.64.2    cnbc-mirror cnbc-registry
+kind: ConfigMap
+metadata:
+  annotations:
+    meta.helm.sh/release-name: coredns
+    meta.helm.sh/release-namespace: kube-system
+  labels:
+    app.kubernetes.io/instance: coredns
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: coredns
+    helm.sh/chart: coredns-1.39.2
+    k8s-app: coredns
+    kubernetes.io/cluster-service: "true"
+    kubernetes.io/name: CoreDNS
+  name: coredns
+  namespace: kube-system
+```
+
+Mount complete configmap not only coredns item:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "4"
+    meta.helm.sh/release-name: coredns
+    meta.helm.sh/release-namespace: kube-system
+  labels:
+    app.kubernetes.io/instance: coredns
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: coredns
+    app.kubernetes.io/version: 1.12.0
+    helm.sh/chart: coredns-1.39.2
+    k8s-app: coredns
+    kubernetes.io/cluster-service: "true"
+    kubernetes.io/name: CoreDNS
+  name: coredns
+  namespace: kube-system
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: coredns
+      app.kubernetes.io/name: coredns
+      k8s-app: coredns
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/config: 8cb9897670e902ce3724b29e54e1a051f4a6ad237c87634ee3c2cbc4215415e6
+        kubectl.kubernetes.io/restartedAt: "2025-04-22T09:02:08+02:00"
+        scheduler.alpha.kubernetes.io/tolerations: '[{"key":"CriticalAddonsOnly",
+          "operator":"Exists"}]'
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: coredns
+        app.kubernetes.io/name: coredns
+        k8s-app: coredns
+    spec:
+      containers:
+      - args:
+        - -conf
+        - /etc/coredns/Corefile
+        image: coredns/coredns:1.12.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: coredns
+        ports:
+        - containerPort: 53
+          name: udp-53
+          protocol: UDP
+        - containerPort: 53
+          name: tcp-53
+          protocol: TCP
+        - containerPort: 9153
+          name: tcp-9153
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 1
+          httpGet:
+            path: /ready
+            port: 8181
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - NET_BIND_SERVICE
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/coredns
+          name: config-volume
+      dnsPolicy: Default
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: coredns
+        name: config-volume
+```
+
+## kube-vip
+
+kube-vip provides both a floating or virtual IP address for your kubernetes cluster as well as load-balancing the incoming traffic to various control-plane replicas. 
+
+Extract kube-vip binary
+
+```shell
+KUBE_VIP_VERSION=0.9.0
+docker container export $(docker container create --name kube-vip ghcr.io/kube-vip/kube-vip:v${KUBE_VIP_VERSION}) -o kube-vip-${KUBE_VIP_VERSION}.tar
+tar -xvf kube-vip-${KUBE_VIP_VERSION}.tar kube-vip
+multipass transfer kube-vip controller-cnbc-k8s:/home/ubuntu
+multipass exec controller-cnbc-k8s sudo mv kube-vip /usr/local/bin
+rm kube-vip-${KUBE_VIP_VERSION}.tar
+docker container rm kube-vip
+```
+
+```text
+[Unit]
+Description=Kube-VIP - Virtual IP for Kubernetes Control Plane
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/kube-vip manager \
+    --interface enp0s1 \
+    --address 192.168.64.254 \
+    --vip-cidr 32 \
+    --arp \
+    --k8sConfigPath /var/lib/kuberentes/admin.kubeconfig \
+    --controlplane \
+    --namespace kube-system \
+    --services \
+    --leaderElection \
+    --leaseDuration 5 \
+    --renewDeadline 3 \
+    --retryPeriod 1 \
+    --port 6443
+Restart=always
+RestartSec=5
+
+# Needed for VIP management
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_TIME
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_TIME
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+````
+
+## ETCD
+
+Health Check Certs?
+
+* https://etcd.io/docs/v3.5/tutorials/how-to-check-cluster-status/
+
+```shell
+etcdctl endpoint status (--endpoints=$ENDPOINTS|--cluster)
+
+etcdctl  endpoint health --cacert /var/lib/kubernetes/kubernetes-ca.pem --cert /var/lib/kubernetes/kubernetes.pem --key /var/lib/kubernetes/kubernetes-key.pem https://192.168.64.15:2379
+```
+
+### Access data
+
+- [Access ETCD](https://medium.com/@bala.praveenkumar/understanding-the-workflow-how-kubernetes-uses-etcd-to-store-and-manage-cluster-information-2196355a5422)
+- [Play jq](https://play.jqlang.org)
+
+```shell
+kubeclt --kubeconfig admin.kubeconfig create deployment nginx --image=nginx
+
+sudo ETCDCTL_API=3 etcdctl  --cacert /var/lib/kubernetes/etcd-ca.pem \
+  --cert /var/lib/kubernetes/apiserver-etcd-client.pem \
+  --key /var/lib/kubernetes/apiserver-etcd-client-key.pem \
+  --endpoints=https://192.168.64.18:2379 \
+  get / --prefix --keys-only 
+
+sudo apt install -y jq
+sudo ETCDCTL_API=3 etcdctl  --cacert /var/lib/kubernetes/etcd-ca.pem \
+  --cert /var/lib/kubernetes/apiserver-etcd-client.pem \
+  --key /var/lib/kubernetes/apiserver-etcd-client-key.pem \
+  --endpoints=https://192.168.64.18:2379 \
+  get /registry/deployments/default/nginx -w json | jq -r '
+  .kvs[] |
+  {key: (.key | @base64d), value: (.value | @base64d)}
+'
+```
+
+## Teardown the hard way instances
+
+```shell
+./teardown.sh
+multipass list --format json | jq '(.list[] | select(.name | contains("cnbc-k8s"))) | .name'
+multipass purge
+```
+
 ## Troubleshooting
 
 ### All nodes should be able to reach each other via hostname
@@ -215,6 +698,113 @@ workers
 ```shell
 mount bpffs /sys/fs/bpf -t bpf
 ```
+
+### multipass
+
+- [Multipass Completion](https://gist.github.com/linux-china/3e1a7ce99393382ad8fe575af19c8f07)
+- https://github.com/linux-china/cli-completion
+
+```shell
+curl -Ls -o multipass_completion.zsh \
+https://gist.githubusercontent.com/linux-china/3e1a7ce99393382ad8fe575af19c8f07/raw/09b65ff2615c3c4f279653e3715f87f4f7ee2a75/multipass_completion.zsh
+mkdir ~/.oh-my-zsh/custom/plugins/multipass
+cp multipass_completion.zsh ~/.oh-my-zsh/custom/plugins/multipass/_multipass
+```
+
+### tls
+
+Can't access Kubelet from metrics server:
+- create only client certs for worker!
+
+```shell
+# tls verification error
+openssl s_client -showcerts -connect 192.168.64.20:10250
+Connecting to 192.168.64.20
+CONNECTED(00000003)
+Can't use SSL_get_servername
+depth=0 C=DE, ST=NRW, L=Bochum, O=system:nodes, OU=Kubernetes The Hard Way, CN=system:node:worker-2-cnbc-k8s
+verify error:num=20:unable to get local issuer certificate
+verify return:1
+depth=0 C=DE, ST=NRW, L=Bochum, O=system:nodes, OU=Kubernetes The Hard Way, CN=system:node:worker-2-cnbc-k8s
+verify error:num=26:unsuitable certificate purpose
+verify return:1
+depth=0 C=DE, ST=NRW, L=Bochum, O=system:nodes, OU=Kubernetes The Hard Way, CN=system:node:worker-2-cnbc-k8s
+verify error:num=21:unable to verify the first certificate
+verify return:1
+depth=0 C=DE, ST=NRW, L=Bochum, O=system:nodes, OU=Kubernetes The Hard Way, CN=system:node:worker-2-cnbc-k8s
+verify return:1
+
+curl -vv \                                                  
+  --cert ./00-certificates/06-kubernetes-api/apiserver-kubelet-client.pem \
+  --key ./00-certificates/06-kubernetes-api/apiserver-kubelet-client-key.pem \
+  --cacert ./00-certificates/00-Certificate-Authority/kubernetes-ca.pem \
+  https://192.168.64.20:10250/containerLogs/kube-system/metrics-server-6cb874ffbc-wjsgn/metrics-server
+* SSL certificate problem: unsupported certificate purpose
+* Closing connection
+curl: (60) SSL certificate problem: unsupported certificate purpose
+More details here: https://curl.se/docs/sslcerts.html
+
+kubectl describe apiservice v1beta1.metrics.k8s.io
+    Message:               failing or missing response from https://172.17.0.210:443/apis/metrics.k8s.io/v1beta1: Get "https://172.17.0.210:443/apis/metrics.k8s.io/v1beta1": context deadline exceeded
+    Reason:                FailedDiscoveryCheck
+kubectl get --raw "/apis/metrics.k8s.io/v1beta1/nodes"
+Error from server (ServiceUnavailable): the server is currently unable to handle the request
+kubectl get endpoints metrics-server -n kube-system
+```
+
+```shell
+# access...
+curl -ik https://192.168.64.18:6443/apis/metrics.k8s.io/v1beta1/nodes \
+  --cert ./00-certificates/08-front-proxy-client/front-proxy-client.pem \
+  --key ./00-certificates/08-front-proxy-client/front-proxy-client-key.pem \
+  --cacert ./00-certificates/00-Certificate-Authority/front-proxy-client-ca.pem \
+  -H 'X-Remote-User: system:kube-aggregator' \
+  -H 'X-Remote-Group: system:masters'
+
+# get prometheus metrics
+curl -ik https://192.168.64.20:10250/metrics \
+  --cert ./00-certificates/06-kubernetes-api/apiserver-kubelet-client.pem \
+  --key ./00-certificates/06-kubernetes-api/apiserver-kubelet-client-key.pem \
+  --cacert ./00-certificates/00-Certificate-Authority/kubernetes-ca.pem \
+  -H 'X-Remote-User: system:kube-aggregator' \
+  -H 'X-Remote-Group: system:masters'
+```
+
+API:
+
+- /apis/metrics.k8s.io/v1beta1/pods
+- /apis/metrics.k8s.io/v1beta1/namespaces/{namespace}/pods
+- /apis/metrics.k8s.io/v1beta1/namespaces/{namespace}/pods/{name}
+- /apis/metrics.k8s.io/v1beta1/nodes
+- /apis/metrics.k8s.io/v1beta1/nodes/{name}
+
+ControlPlane to Cluster Service Communication
+
+- https://kubernetes.io/docs/concepts/architecture/control-plane-node-communication/#control-plane-to-node
+
+## Challenges of Day 2 Operations
+
+- Rotation of TLS certs of kubernetes componentes
+  - CA Rotation
+- backup and restore etcd database
+- Metrics, Logs and alerts
+- Setup CNI
+- Security
+  - Image CVE, Signature
+  - Kyverno only AirCap Repositories
+- CVE Status of systems?
+- Updates
+  - OS
+  - Kubernetes
+  - Containerd
+- flux 
+- renovate
+  - Dependency Update
+- add services
+  - cert-Managaer
+  - external-dns
+  - external secret manager
+  - storage
 
 ## FAQ
 
@@ -262,4 +852,5 @@ mount bpffs /sys/fs/bpf -t bpf
 - [Kubernetes-Tutorials](https://github.com/Albertchong/Kubernetes-Tutorials/)
 
 Regards,
-[`|-o-|` The pathfinder - Peter](mailto://peter.rossbach@bee42.com)
+
+[`├─☺︎─┤` The humbled paint signer - Peter Rossbach](mailto://peter.rossbach@bee42.com)

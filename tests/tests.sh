@@ -12,9 +12,9 @@ kubectl create secret \
   generic kubernetes-the-hard-way --from-literal="mykey=mydata"
 
 msg_info "Checking secret is encrypted"
-ETCD_OUTPUT="$(multipass exec controller-k8s -- sudo ETCDCTL_API=3 etcdctl get \
-     --endpoints=https://127.0.0.1:2379 --cacert=/etc/etcd/ca.pem \
-     --cert=/etc/etcd/kubernetes.pem --key=/etc/etcd/kubernetes-key.pem \
+ETCD_OUTPUT="$(multipass exec controller-cnbc-k8s -- sudo ETCDCTL_API=3 etcdctl get \
+     --endpoints=https://127.0.0.1:2379 --cacert=/etc/etcd/etcd-ca.pem \
+     --cert=/etc/etcd/etcd-healthcheck-client.pem --key=/etc/etcd/etcd-healthcheck-client-key.pem \
      /registry/secrets/default/kubernetes-the-hard-way | hexdump -C)"
 if ! grep -q 'aescbc' <<<"${ETCD_OUTPUT=}"; then
   msg_fatal "Kubernetes secret is not encrypted"
@@ -31,7 +31,7 @@ msg_info "Exposing nginx"
 kubectl expose deployment nginx --port 80 --type NodePort
 NODE_PORT=$(kubectl get svc nginx \
   --output=jsonpath='{range .spec.ports[0]}{.nodePort}')
-WORKER_IP=$(multipass info 'worker-1-k8s' | grep 'IPv4' | \
+WORKER_IP=$(multipass info 'worker-1-cnbc-k8s' | grep 'IPv4' | \
   awk '{ print $2 }')
 
 msg_info "Can I talk to nginx?"

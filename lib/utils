@@ -108,3 +108,7 @@ function transfer_file() {
   local INSTANCE=${2}
   multipass transfer -v "${FILE}" "${INSTANCE}":/home/ubuntu/"${FILE##*/}"
 }
+
+function warn () {
+    echo "$0:" "$@" >&2
+}

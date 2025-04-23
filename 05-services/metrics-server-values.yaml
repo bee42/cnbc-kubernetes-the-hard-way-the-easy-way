@@ -1,0 +1,37 @@
+args:
+   - --kubelet-insecure-tls
+#  - --tls-cert-file=/var/lib/kubernetes/metrics-proxy/tls.crt
+#  - --tls-private-key-file=/var/lib/kubernetes/metrics-proxy/tls.key
+#  - --requestheader-client-ca-file=/var/lib/kubernetes/metrics-proxy/ca.crt
+#  - --kubelet-certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+#  - --kubelet-client-certificate=/var/lib/kubernetes/kubelet-client/tls.crt
+#  - --kubelet-client-key=/var/lib/kubernetes/kubelet-client/tls.key
+#  - --requestheader-allowed-names=front-proxy-client
+extraVolumeMounts:
+  - name: metrics-proxy
+    mountPath: /var/lib/kubernetes/metrics-proxy
+    readOnly: true
+  - name: kubelet-client
+    mountPath: /var/lib/kubernetes/kubelet-client
+    readOnly: true
+extraVolumes:
+  - name: metrics-proxy
+    secret:
+      secretName: metrics-proxy
+      defaultMode: 420
+  - name: kubelet-client
+    secret:
+      secretName: kubelet-client
+      defaultMode: 420
+service:
+  type: ClusterIP
+  port: 443
+  annotations: {}
+  labels:
+    kubernetes.io/cluster-service: "true"
+    kubernetes.io/name: "Metrics-server"
+apiService:
+  create: true
+hostNetwork:
+  enabled: true
+containerPort: 11250

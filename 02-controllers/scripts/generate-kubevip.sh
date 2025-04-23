@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+SERVICE_CLUSTER_IP_RANGE="${1}"
+SERVICE_NODE_PORT_RANGE="${2}"
+CLUSTER_CIDR="${3}"
+KUBE_API_CLUSTER_IP="${4}"
+CLUSTER_DOMAIN="${5:-cluster.local}"
+
+declare -a INTERNAL_IPS=() COMPUTER_IPV4_ADDRESSES=()
+while IFS= read -r ip; do
+  if [[ -n ${ip} ]]; then
+    INTERNAL_IPS+=("${ip}")
+  fi
+done < <(hostname -I | tr '[:space:]' '\n')
+VERSION_REGEX='([0-9]*)\.'
+
+for ip in "${INTERNAL_IPS[@]}"; do
+  if grep -E "${VERSION_REGEX}" <<< "${ip}" > /dev/null; then
+    COMPUTER_IPV4_ADDRESSES+=("${ip}")
+  fi
+done
+
+echo 'Creating kube-vip systemd service'
+
+if [[ ! -f /var/lib/kubernetes/kube-vip.kubeconfig ]]; then
+  echo 'Moving kube-vip config to /var/lib/kubernetes/'
+  sudo mv kube-vip.kubeconfig /var/lib/kubernetes/
+fi
+
+mkdir -p /var/lib/kubernetes/kube-vip/
+
+INTERFACE=192.
+cat <<EOF | sudo tee /etc/systemd/system/kube-vip.service
+[Unit]
+Description=Kube-VIP - Virtual IP for Kubernetes Control Plane
+Documentation=https://github.com/kube-vip/kube-vip/tree/main
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/kube-vip manager \
+    --interface ${INTERFACE} \
+    --address ${ADDRESS} \
+    --vip-cidr 32 \
+    --arp \
+    --controlplane \
+    --namespace kube-system \
+    --services \
+    --leaderElection \
+    --leaseDuration 5 \
+    --renewDeadline 3 \
+    --retryPeriod 1 \
+    --port 6443
+Restart=always
+RestartSec=5
+
+# Needed for VIP management
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_TIME
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_TIME
+ExecReload=/bin/kill -HUP \$MAINPID
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now kube-vip
+
+function check_systemctl_status() {
+  local UNIT="${1}"
+  if ! grep -q 'active' <(systemctl is-active "${UNIT}"); then
+    warn "${UNIT} status is NOT: active"
+    return 1
+  fi
+}
+
+check_systemctl_status "kube-vip"

@@ -36,32 +36,36 @@ check_dependencies
 
 export \
   ARCH=${ARCH:-$(get_arch)} \
-  NERDCTL_VERSION='1.7.3' \
-  KUBERNETES_VERSION='1.28.6' \
-  ETCD_VERSION='3.5.12' \
-  CONTAINERD_VERSION='1.7.13' \
-  CNI_PLUGINS_VERSION='1.4.0' \
-  COREDNS_CHART_VERSION='1.29.0' \
-  CILIUM_CHART_VERSION='1.15.0' \
-  METRICS_SERVER_CHART_VERSION='3.12.0' \
+  NERDCTL_VERSION=${NERDCTL_VERSION:-'1.7.7'} \
+  KUBERNETES_VERSION=${KUBERNETES_VERSION:-'1.32.3'} \
+  ETCD_VERSION='3.5.21' \
+  CONTAINERD_VERSION='1.7.27' \
+  CNI_PLUGINS_VERSION='1.6.2' \
+  COREDNS_CHART_VERSION='1.39.2' \
+  CILIUM_CHART_VERSION='1.17.2' \
+  METRICS_SERVER_CHART_VERSION='3.12.2' \
   UBUNTU_VERSION='22.04' \
   SERVICE_CLUSTER_IP_RANGE='172.17.0.0/24' \
   SERVICE_NODE_PORT_RANGE='30000-32767' \
   CLUSTER_CIDR='172.16.0.0/16' \
   DNS_CLUSTER_IP='172.17.0.10' \
   REGISTRY_IP='192.168.67.2' \
-  KUBE_PROXY_ENABLED=off
+  KUBE_PROXY_ENABLED=off \
+  CLUSTER_DOMAIN=${CLUSTER_DOMAIN:-cluster.local} \
+  COUNTRY="${COUNTRY:-DE}" \
+  CITY="${CITY:-Bochum}" \
+  STATE="${STATE:-NRW}" \
 
 export KUBE_API_CLUSTER_IP
 KUBE_API_CLUSTER_IP="$(ipcalc "${SERVICE_CLUSTER_IP_RANGE}" | grep 'HostMin' | awk '{ print $2 }')"
+
+export REGISTRY_MODE=${REGISTRY_MODE:-off}
 
 # To Be Determined
 # - Service IP range: 10.32.0.0/24
 # - Node Port range: 30000-32767
 
 msg_info 'Creating multipass instances'
-
-export REGISTRY_MODE=off
 
 if [ "$REGISTRY_MODE" == "on" ] ; then
 
@@ -89,14 +93,16 @@ fi
 msg_info 'Creating multipass instances controller and worker'
 
 for i in 'controller-cnbc-k8s' 'worker-1-cnbc-k8s' 'worker-2-cnbc-k8s' ; do
-  multipass launch --name "${i}" --cpus 2 --memory 2048M --disk 11G "${UBUNTU_VERSION}"
+  multipass launch --name "${i}" --cpus 2 --memory 2048M --disk 20G "${UBUNTU_VERSION}"
 done
 
 msg_info 'Creating and distributing certificates'
 
 cd 00-certificates/ || exit
-bash distribute-certificates.sh
+bash distribute-certificates.sh "${COUNTRY}" "${CITY}" "${STATE}" ${CLUSTER_DOMAIN}
 cd - || exit
+
+exit
 
 msg_info 'Creating and distributing config files'
 
@@ -116,14 +122,14 @@ cd - || exit
 msg_info 'Configuring the Kubernetes control plane'
 
 multipass exec controller-cnbc-k8s -- bash generate-etcd-systemd.sh "${ETCD_VERSION}"
-multipass exec controller-cnbc-k8s -- bash generate-kubernetes-control-plane-systemd.sh "${SERVICE_CLUSTER_IP_RANGE}" "${SERVICE_NODE_PORT_RANGE}" "${CLUSTER_CIDR}" "${KUBE_API_CLUSTER_IP}"
+multipass exec controller-cnbc-k8s -- bash generate-kubernetes-control-plane-systemd.sh "${SERVICE_CLUSTER_IP_RANGE}" "${SERVICE_NODE_PORT_RANGE}" "${CLUSTER_CIDR}" "${KUBE_API_CLUSTER_IP}" "${CLUSTER_DOMAIN}"
 multipass exec controller-cnbc-k8s -- bash generate-kubelet-rbac-authorization.sh
 
 msg_info 'Configuring the Kubernetes workers'
 
 for i in 'worker-1-cnbc-k8s' 'worker-2-cnbc-k8s'; do
   msg_info "Provisioning ${i}"
-  multipass exec "${i}" -- bash bootstrap-workers.sh "${CONTAINERD_VERSION}" "${CNI_PLUGINS_VERSION}" "${DNS_CLUSTER_IP}" "${REGISTRY_IP}" "${KUBE_PROXY_ENABLED}" "${CLUSTER_CIDR}"
+  multipass exec "${i}" -- bash bootstrap-workers.sh "${CONTAINERD_VERSION}" "${CNI_PLUGINS_VERSION}" "${DNS_CLUSTER_IP}" "${REGISTRY_IP}" "${KUBE_PROXY_ENABLED}" "${CLUSTER_CIDR}" "${CLUSTER_DOMAIN}"
 done
 
 msg_info 'Setting up kubectl to use your newly created cluster'
