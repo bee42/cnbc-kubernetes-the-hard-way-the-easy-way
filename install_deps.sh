@@ -73,6 +73,7 @@ install_deps_apt() {
           echo "Installing cfssl and cfssljson..."
           REPO="cloudflare/cfssl"
           LATEST_TAG=$(curl -s "https://api.github.com/repos/${REPO}/releases/latest" | jq -r .tag_name)
+          LATEST_TAG=${LATEST_TAG#v}  # Remove leading 'v'
           curl -s -L -o cfssl https://github.com/${REPO}/releases/${LATEST_TAG}/download/cfssl-linux-${ARCH}
           curl -s -L -o cfssljson https://github.com/${REPO}/releases/${LATEST_TAG}/download/cfssljson-linux-${ARCH}
           chmod +x cfssl cfssljson
