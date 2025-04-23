@@ -21,7 +21,7 @@ declare -a DEPS=(
   'helm'
 )
 
-ARCH=get_arch
+ARCH=$(get_arch)
 
 install_deps_mac() {
   # Ensure Homebrew is installed
@@ -54,7 +54,7 @@ install_deps_apt() {
   sudo apt-get update -y
 
   echo "Installing base packages..."
-  sudo apt-get install -y curl gnupg lsb-release software-properties-common
+  sudo apt-get install -y curl jq gnupg lsb-release software-properties-common
 
   for pkg in "${DEPS[@]}"; do
     case "$pkg" in
@@ -71,8 +71,10 @@ install_deps_apt() {
       cfssl|cfssljson)
         if ! command -v cfssl &> /dev/null || ! command -v cfssljson &> /dev/null; then
           echo "Installing cfssl and cfssljson..."
-          curl -s -L -o cfssl https://github.com/cloudflare/cfssl/releases/latest/download/cfssl-linux-${ARCH}
-          curl -s -L -o cfssljson https://github.com/cloudflare/cfssl/releases/latest/download/cfssljson-linux-${ARCH}
+          REPO="cloudflare/cfssl"
+          LATEST_TAG=$(curl -s "https://api.github.com/repos/${REPO}/releases/latest" | jq -r .tag_name)
+          curl -s -L -o cfssl https://github.com/${REPO}/releases/${LATEST_TAG}/download/cfssl-linux-${ARCH}
+          curl -s -L -o cfssljson https://github.com/${REPO}/releases/${LATEST_TAG}/download/cfssljson-linux-${ARCH}
           chmod +x cfssl cfssljson
           sudo mv cfssl cfssljson /usr/local/bin/
         fi
