@@ -10,6 +10,14 @@ strictMode
 . "${GITROOT}"/env.sh
 . ./define-certificates.sh
 
+if [[ "${MULTIPASS_ENABLED}" == 'on' ]] ; then
+  declare -a MINIONS=( $(multipass list | grep 'worker' | awk '{ print $1 }' ) )
+  declare -a GRUS=( $(multipass list | grep 'controller' | awk '{ print $1 }' ) )
+else
+  declare -a MINIONS=( 'node-03' 'node-04' )
+  declare -a GRUS=( 'node-02' )
+fi
+
 function check_gru_certs() {
   declare -a MISSING=()
   # Ensure dependencies are present
@@ -26,10 +34,17 @@ function check_gru_certs() {
 function check_minion_certs() {
   declare -a MISSING=()
   # Ensure dependencies are present
-  for i in "${MINIONS_CERTS[@]}"; do
-    if [[ ! -f "${i}" ]] ; then
-      MISSING+=("${i}")
-    fi
+  for instance in "${MINIONS[@]}"; do
+    declare -a MINIONS_CERTS=(
+      './00-Certificate-Authority/kubernetes-ca.pem' 
+      './02-kubelet-client/${instance}-key.pem' 
+      './02-kubelet-client/${instance}.pem"'
+    )
+    for i in "${MINIONS_CERTS[@]}"; do
+      if [[ ! -f "${i}" ]] ; then
+        MISSING+=("${i}")
+      fi
+    done
   done
   if [[ ${#MISSING[@]} -ne 0 ]]; then
     msg_fatal "[-] Certs unmet. Please verify that the following are data plane(worker) certs missing: " "${MISSING[@]}"

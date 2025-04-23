@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
-declare -a MINIONS_CERTS=(
-  './00-Certificate-Authority/kubernetes-ca.pem' 
-  './02-kubelet-client/${instance}-key.pem' 
-  './02-kubelet-client/${instance}.pem"'
-)
+
 
 declare -a GRUS_CERTS=(
   './00-Certificate-Authority/kubernetes-ca.pem'
