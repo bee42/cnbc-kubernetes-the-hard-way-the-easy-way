@@ -1,0 +1,30 @@
+declare -a MINION_CERTS (
+  './00-Certificate-Authority/kubernetes-ca.pem' 
+  './02-kubelet-client/${instance}-key.pem' 
+  './02-kubelet-client/${instance}.pem"'
+)
+
+declare -a GRUS_CERTS (
+  './00-Certificate-Authority/kubernetes-ca.pem'
+  './00-Certificate-Authority/kubernetes-ca-key.pem'
+  './00-Certificate-Authority/kubernetes-front-proxy-ca.pem'
+  './00-Certificate-Authority/kubernetes-front-proxy-ca-key.pem'
+  './06-kubernetes-api/kubernetes-key.pem'
+  './06-kubernetes-api/kubernetes.pem'
+  './06-kubernetes-api/apiserver-kubelet-client.pem'
+  './06-kubernetes-api/apiserver-kubelet-client-key.pem'
+  './07-service-account/service-account-key.pem'
+  './07-service-account/service-account.pem'
+  './08-front-proxy-client/front-proxy-client-key.pem'
+  './08-front-proxy-client/front-proxy-client.pem'
+  './00-Certificate-Authority/etcd-ca/etcd-ca.pem'
+  './00-Certificate-Authority/etcd-ca/etcd-ca-key.pem'
+  './09-etcd/etcd-server.pem'
+  './09-etcd/etcd-server-key.pem'
+  './09-etcd/apiserver-etcd-client.pem'
+  './09-etcd/apiserver-etcd-client-key.pem'
+  './09-etcd/etcd-peer.pem'
+  './09-etcd/etcd-peer-key.pem'
+  './09-etcd/etcd-healthcheck-client.pem'
+  './09-etcd/etcd-healthcheck-client-key.pem'
+)
