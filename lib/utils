@@ -106,10 +106,10 @@ function join_by {
 function transfer_file() {
   local FILE="${1}"
   local INSTANCE=${2}
-  if ! command -v "multipass" &> /dev/null ; then
-     multipass transfer -v "${FILE}" "${INSTANCE}":/home/ubuntu/"${FILE##*/}"
+  if command -v "multipass" &> /dev/null ; then
+    multipass transfer -v "${FILE}" "${INSTANCE}":/home/ubuntu/"${FILE##*/}"
   else
-     scp "${FILE}" "${INSTANCE}":/home/laborant/"${FILE##*/}"
+    scp "${FILE}" "${INSTANCE}":/home/laborant/"${FILE##*/}"
   fi
 }
 
