@@ -22,8 +22,8 @@ fi
 for instance in "${MINIONS[@]}"; do
   declare -a MINIONS_CERTS=(
     './00-Certificate-Authority/kubernetes-ca.pem' 
-    './02-kubelet-client/${instance}-key.pem' 
-    './02-kubelet-client/${instance}.pem"'
+    "./02-kubelet-client/${instance}-key.pem"
+    "./02-kubelet-client/${instance}.pem"
   )
   for file in "${MINIONS_CERTS[@]}"; do
     transfer_file "${file}" "${instance}"
