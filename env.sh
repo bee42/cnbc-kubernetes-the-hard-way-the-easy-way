@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 export \
-  ARCH=${ARCH:-$(get_arch)} \
   NERDCTL_VERSION=${NERDCTL_VERSION:-'1.7.7'} \
   KUBERNETES_VERSION=${KUBERNETES_VERSION:-'1.32.3'} \
   ETCD_VERSION='3.5.21' \
