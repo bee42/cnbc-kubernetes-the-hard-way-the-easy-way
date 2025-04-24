@@ -32,7 +32,7 @@ function check_transfed_gru_certs() {
     fi
     for cert in "${GRUS_CERTS[@]}"; do
       cert_basename=("$(basename "$cert")")
-      if [ ${#INSTANCE_GRU_CERT[@]} -eq 0 ] || [[ " ${INSTANCE_GRU_CERT[@]} " =~ " ${cert_basename} " ]] ; then
+      if [[ ! " ${INSTANCE_GRU_CERT[@]} " =~ " ${cert_basename} " ]] ; then
         MISSING+=("${cert}")
       fi
     done
@@ -57,7 +57,7 @@ function check_transfed_minion_certs() {
     fi
     for cert in "${MINIONS_CERTS[@]}"; do
       cert_basename=("$(basename "$cert")")
-      if [ ${#INSTANCE_MINION_CERT[@]} -eq 0 ] || [[ " ${INSTANCE_MINION_CERT[@]} " =~ " ${cert_basename} " ]] ; then
+      if [[ ! " ${INSTANCE_MINION_CERT[@]} " =~ " ${cert_basename} " ]] ; then
         MISSING+=("${cert}")
       fi
     done
