@@ -26,9 +26,9 @@ function check_transfed_gru_certs() {
   declare -a MISSING=()
   for instance in "${GRUS[@]}"; do
     if [[ "${MULTIPASS_ENABLED}" == 'on' ]] ; then
-      declare -a INSTANCE_GRU_CERT=( $(multipass exec $instance "find . -type f -name "*.pem" | sort" ) )
+      declare -a INSTANCE_GRU_CERT=( $(multipass exec $instance 'find . -type f -name "*.pem" | sort | sed "s|^./||"' ) )
     else
-      declare -a INSTANCE_GRU_CERT=( $(ssh $instance "find . -type f -name "*.pem" | sort" ) )
+      declare -a INSTANCE_GRU_CERT=( $(ssh $instance 'find . -type f -name "*.pem" | sort' | sed "s|^./||") )
     fi
     for cert in "${GRUS_CERTS[@]}"; do
       cert_basename=("$(basename "$cert")")
@@ -51,9 +51,9 @@ function check_transfed_minion_certs() {
       "./02-kubelet-client/${instance}.pem"
     )
     if [[ "${MULTIPASS_ENABLED}" == 'on' ]] ; then
-      declare -a INSTANCE_MINION_CERT=( $(multipass exec $instance "find . -type f -name "*.pem" | sort" ) )
+      declare -a INSTANCE_MINION_CERT=( $(multipass exec $instance 'find . -type f -name "*.pem" | sort | sed "s|^./||"' ) )
     else
-      declare -a INSTANCE_MINION_CERT=( $(ssh $instance "find . -type f -name "*.pem" | sort" )  )
+      declare -a INSTANCE_MINION_CERT=( $(ssh $instance 'find . -type f -name "*.pem" | sort | sed "s|^./||"' )  )
     fi
     for cert in "${MINIONS_CERTS[@]}"; do
       cert_basename=("$(basename "$cert")")
