@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 declare -a GRUS_CERTS=(
   './00-Certificate-Authority/kubernetes-ca.pem'
   './00-Certificate-Authority/kubernetes-ca-key.pem'
