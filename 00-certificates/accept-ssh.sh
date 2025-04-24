@@ -13,6 +13,6 @@ if [[ "${MULTIPASS_ENABLED}" == 'off' ]] ; then
   declare -a NODES=( 'node-02' 'node-03' 'node-04' )
   for instance in "${NODES[@]}"; do
     msg_info "Accept ssh connection to host $instance"
-    ssh -o StrictHostKeyChecking=no "$instance" "echo 'Connected!'"
+    ssh -o StrictHostKeyChecking=no "$instance" "echo 'Connected!'" 2>/dev/null
   done
 fi
