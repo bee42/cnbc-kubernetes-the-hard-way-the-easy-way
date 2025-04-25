@@ -21,6 +21,7 @@ function check_dependencies() {
     'kubectl'
     'ipcalc'
     'helm'
+    'crane'
   )
   declare -a MISSING=()
   # Ensure dependencies are present

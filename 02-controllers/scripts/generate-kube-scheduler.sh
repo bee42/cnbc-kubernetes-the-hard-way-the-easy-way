@@ -24,9 +24,9 @@ done
 
 echo 'Creating Kubernetes Scheduler systemd service'
 
-if [[ ! -f /var/lib/kubernetes/kube-scheduler.kubeconfig ]]; then
-  echo 'Moving Kubernetes Scheduler config to /var/lib/kubernetes/'
-  sudo mv kube-scheduler.kubeconfig /var/lib/kubernetes/
+if [[ ! -f /etc/kubernetes/kube-scheduler.kubeconfig ]]; then
+  echo 'Moving Kubernetes Scheduler config to /etc/kubernetes/'
+  sudo mv kube-scheduler.kubeconfig /etc/kubernetes/
 fi
 
 sudo mkdir -p /etc/kubernetes/config
@@ -35,7 +35,7 @@ cat <<EOF | sudo tee /etc/kubernetes/config/kube-scheduler.yaml
 apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 clientConnection:
-  kubeconfig: "/var/lib/kubernetes/kube-scheduler.kubeconfig"
+  kubeconfig: "/etc/kubernetes/kube-scheduler.kubeconfig"
 leaderElection:
   leaderElect: true
 EOF

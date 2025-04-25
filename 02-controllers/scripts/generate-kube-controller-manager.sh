@@ -24,9 +24,9 @@ done
 
 echo 'Creating Kubernetes Controller Manager systemd service'
 
-if [[ ! -f /var/lib/kubernetes/kube-controller-manager.kubeconfig ]]; then
-  echo 'Moving kubernetes Controller Manager config to /var/lib/kubernetes/'
-  sudo mv kube-controller-manager.kubeconfig /var/lib/kubernetes/
+if [[ ! -f /etc/kubernetes/kube-controller-manager.kubeconfig ]]; then
+  echo 'Moving kubernetes Controller Manager config to /etc/kubernetes/'
+  sudo mv kube-controller-manager.kubeconfig /etc/kubernetes/
 fi
 
 cat <<EOF | sudo tee /etc/systemd/system/kube-controller-manager.service
@@ -40,12 +40,12 @@ ExecStart=/usr/local/bin/kube-controller-manager \\
   --bind-address=127.0.0.1 \\
   --cluster-cidr=${CLUSTER_CIDR} \\
   --cluster-name=kubernetes \\
-  --cluster-signing-cert-file=/var/lib/kubernetes/kubernetes-ca.pem \\
-  --cluster-signing-key-file=/var/lib/kubernetes/kubernetes-ca-key.pem \\
-  --kubeconfig=/var/lib/kubernetes/kube-controller-manager.kubeconfig \\
+  --cluster-signing-cert-file=/etc/kubernetes/kubernetes-ca.pem \\
+  --cluster-signing-key-file=/etc/kubernetes/kubernetes-ca-key.pem \\
+  --kubeconfig=/etc/kubernetes/kube-controller-manager.kubeconfig \\
   --leader-elect=true \\
-  --root-ca-file=/var/lib/kubernetes/kubernetes-ca.pem \\
-  --service-account-private-key-file=/var/lib/kubernetes/service-account-key.pem \\
+  --root-ca-file=/etc/kubernetes/kubernetes-ca.pem \\
+  --service-account-private-key-file=/etc/kubernetes/service-account-key.pem \\
   --service-cluster-ip-range=${SERVICE_CLUSTER_IP_RANGE} \\
   --use-service-account-credentials=true \\
   --v=2
@@ -56,9 +56,9 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 
-if [[ ! -f /var/lib/kubernetes/kube-scheduler.kubeconfig ]]; then
-  echo 'Moving Kubernetes Scheduler config to /var/lib/kubernetes/'
-  sudo mv kube-scheduler.kubeconfig /var/lib/kubernetes/
+if [[ ! -f /etc/kubernetes/kube-scheduler.kubeconfig ]]; then
+  echo 'Moving Kubernetes Scheduler config to /etc/kubernetes/'
+  sudo mv kube-scheduler.kubeconfig /etc/kubernetes/
 fi
 
 sudo systemctl daemon-reload

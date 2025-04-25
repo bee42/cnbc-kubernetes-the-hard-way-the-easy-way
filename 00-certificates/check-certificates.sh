@@ -35,8 +35,11 @@ function check_minion_certs() {
   for instance in "${MINIONS[@]}"; do
     declare -a MINIONS_CERTS=(
       './00-Certificate-Authority/kubernetes-ca.pem' 
-      "./02-kubelet-client/${instance}-key.pem"
-      "./02-kubelet-client/${instance}.pem"
+      "./02-kubelet-client/${instance}-client-key.pem"
+      "./02-kubelet-client/${instance}-client-pem"
+      './00-Certificate-Authority/kubelet-ca/kubelet-ca.pem' 
+      "./10-kubelet-server/${instance}-server-key.pem"
+      "./10-kubelet-server/${instance}-server.pem"
     )
     for cert in "${MINIONS_CERTS[@]}"; do
       if [[ ! -f "${cert}" ]] ; then

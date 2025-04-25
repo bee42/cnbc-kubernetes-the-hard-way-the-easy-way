@@ -19,9 +19,9 @@ function get_arch() {
 
 ARCH="$(get_arch)"
 
-if ! grep 'worker-1-cnbc-k8s' /etc/hosts &> /dev/null; then
+if ! grep '$(cat k8s-hosts | head -1 | awk '{print $2}')' /etc/hosts &> /dev/null; then
   # shellcheck disable=SC2002
-  cat multipass-hosts | sudo tee -a /etc/hosts
+  cat k8s-hosts | sudo tee -a /etc/hosts
 fi
 
 if [[ ! -x $(command -v etcd) || ! -x $(command -v etcdctl) ]]; then

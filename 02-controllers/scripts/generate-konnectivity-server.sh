@@ -24,12 +24,12 @@ done
 
 echo 'Creating konnectivity proxy server systemd service'
 
-if [[ ! -f /var/lib/kubernetes/konnectivity-server.kubeconfig ]]; then
-  echo 'Moving konnectivity config to /var/lib/kubernetes/'
-  sudo mv konnectivity-server.kubeconfig /var/lib/kubernetes/
+if [[ ! -f /etc/kubernetes/konnectivity-server.kubeconfig ]]; then
+  echo 'Moving konnectivity config to /etc/kubernetes/'
+  sudo mv konnectivity-server.kubeconfig /etc/kubernetes/
 fi
 
-mkdir -p /var/lib/kubernetes/konnectivity-server/
+mkdir -p /etc/kubernetes/konnectivity-server/
 
 cat <<EOF | sudo tee /etc/systemd/system/konnectivity-server.service
 [Unit]
@@ -42,8 +42,8 @@ ExecStart=/usr/local/bin/proxy-server \\
   --logtostderr=false \\
   --log-file-max-size=0 \\
   --uds-name=/var/lib/kubernetes/konnectivity-server/konnectivity-server.socket \\
-  --cluster-cert=/var/lib/kubernetes/kubernetes.pem \\
-  --cluster-key=/var/lib/kubernetes/kubernetes-key.pem \\
+  --cluster-cert=/etc/kubernetes/kubernetes.pem \\
+  --cluster-key=/etc/kubernetes/kubernetes-key.pem \\
   --server-port=0 \\
   --agent-port=8091 \\
   --health-port=8092 \\
@@ -52,7 +52,7 @@ ExecStart=/usr/local/bin/proxy-server \\
   --mode=grpc \\
   --agent-namespace=kube-system \\
   --agent-service-account=konnectivity-agent \\
-  --kubeconfig=/var/lib/kubernetes/konnectivity-server.kubeconfig \\
+  --kubeconfig=/etc/kubernetes/konnectivity-server.kubeconfig \\
   --authentication-audience=system:konnectivity-server
 Restart=on-failure
 RestartSec=5

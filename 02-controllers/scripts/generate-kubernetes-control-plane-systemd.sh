@@ -14,14 +14,15 @@ if [[ ! -x $(command -v kube-apiserver) || ! -x $(command -v kube-controller-man
   sudo mv kube-apiserver kube-controller-manager kube-scheduler kubectl /usr/local/bin/
 fi
 
-if [[ ! -d /var/lib/kubernetes || ! -f /var/lib/kubernetes/kubernetes-ca.pem || ! -f /var/lib/kubernetes/kubernetes-ca-key.pem || ! -f /var/lib/kubernetes/kubernetes-key.pem || ! -f /var/lib/kubernetes/kubernetes.pem || ! -f /var/lib/kubernetes/service-account-key.pem || ! -f /var/lib/kubernetes/service-account.pem || ! -f /var/lib/kubernetes/encryption-config.yaml ]]; then
+if [[ ! -d /etc/kubernetes || ! -f /etc/kubernetes/kubernetes-ca.pem || ! -f /etc/kubernetes/kubernetes-ca-key.pem || ! -f /etc/kubernetes/kubernetes-key.pem || ! -f /etc/kubernetes/kubernetes.pem || ! -f /etc/kubernetes/service-account-key.pem || ! -f /etc/kubernetes/service-account.pem || ! -f /etc/kubernetes/encryption-config.yaml ]]; then
   echo 'kubernetes certificates and/or encryption config are not where they should, I will now move them where they should be'
-  sudo mkdir -p /var/lib/kubernetes/
+  sudo mkdir -p /etc/kubernetes/
 
   sudo mv \
     kubernetes-ca.pem kubernetes-ca-key.pem \
     kubernetes.pem kubernetes-key.pem \
     kubernetes-front-proxy-ca.pem  \
+    kubelet-ca.pem \
     apiserver-kubelet-client.pem apiserver-kubelet-client-key.pem \
     service-account.pem service-account-key.pem \
     apiserver-etcd-client.pem apiserver-etcd-client-key.pem \
@@ -31,7 +32,7 @@ if [[ ! -d /var/lib/kubernetes || ! -f /var/lib/kubernetes/kubernetes-ca.pem || 
     etcd-peer.pem etcd-peer-key.pem \
     etcd-healthcheck-client.pem etcd-healthcheck-client-key.pem \
     encryption-config.yaml \
-    /var/lib/kubernetes/
+    /etc/kubernetes/
 fi
 
 declare -a INTERNAL_IPS=() COMPUTER_IPV4_ADDRESSES=()
@@ -65,29 +66,29 @@ ExecStart=/usr/local/bin/kube-apiserver \\
   --audit-log-path=/var/log/audit.log \\
   --authorization-mode=Node,RBAC \\
   --bind-address=0.0.0.0 \\
-  --client-ca-file=/var/lib/kubernetes/kubernetes-ca.pem \\
+  --client-ca-file=/etc/kubernetes/kubernetes-ca.pem \\
   --enable-admission-plugins=NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota \\
-  --etcd-cafile=/var/lib/kubernetes/etcd-ca.pem \\
-  --etcd-certfile=/var/lib/kubernetes/apiserver-etcd-client.pem \\
-  --etcd-keyfile=/var/lib/kubernetes/apiserver-etcd-client-key.pem \\
+  --etcd-cafile=/etc/kubernetes/etcd-ca.pem \\
+  --etcd-certfile=/etc/kubernetes/apiserver-etcd-client.pem \\
+  --etcd-keyfile=/etc/kubernetes/apiserver-etcd-client-key.pem \\
   --etcd-servers=https://${COMPUTER_IPV4_ADDRESSES[0]}:2379 \\
   --event-ttl=1h \\
-  --encryption-provider-config=/var/lib/kubernetes/encryption-config.yaml \\
-  --kubelet-certificate-authority=/var/lib/kubernetes/kubernetes-ca.pem \\
-  --kubelet-client-certificate=/var/lib/kubernetes/kube-apiserver-kubelet-client.pem \\
-  --kubelet-client-key=/var/lib/kubernetes/kube-apiserver-kubelet-client-key.pem \\
+  --encryption-provider-config=/etc/kubernetes/encryption-config.yaml \\
+  --kubelet-certificate-authority=/etc/kubernetes/kubelet-ca.pem \\
+  --kubelet-client-certificate=/etc/kubernetes/apiserver-kubelet-client.pem \\
+  --kubelet-client-key=/etc/kubernetes/apiserver-kubelet-client-key.pem \\
   --runtime-config=api/all=true \\
   --service-account-issuer=${KUBE_API_CLUSTER_IP} \\
-  --service-account-key-file=/var/lib/kubernetes/service-account.pem \\
-  --service-account-signing-key-file=/var/lib/kubernetes/service-account-key.pem \\
+  --service-account-key-file=/etc/kubernetes/service-account.pem \\
+  --service-account-signing-key-file=/etc/kubernetes/service-account-key.pem \\
   --service-cluster-ip-range=${SERVICE_CLUSTER_IP_RANGE} \\
   --service-node-port-range=${SERVICE_NODE_PORT_RANGE} \\
-  --tls-cert-file=/var/lib/kubernetes/kubernetes.pem \\
-  --tls-private-key-file=/var/lib/kubernetes/kubernetes-key.pem \\
-  --proxy-client-cert-file=/var/lib/kubernetes/front-proxy-client.pem \\
-  --proxy-client-key-file=/var/lib/kubernetes/front-proxy-client.key \\
+  --tls-cert-file=/etc/kubernetes/kubernetes.pem \\
+  --tls-private-key-file=/etc/kubernetes/kubernetes-key.pem \\
+  --proxy-client-cert-file=/etc/kubernetes/front-proxy-client.pem \\
+  --proxy-client-key-file=/etc/kubernetes/front-proxy-client.key \\
   --requestheader-allowed-names=front-proxy-client \\
-  --requestheader-client-ca-file=/var/lib/kubernetes/kubernetes-front-proxy-ca.pem \\
+  --requestheader-client-ca-file=/etc/kubernetes/kubernetes-front-proxy-ca.pem \\
   --requestheader-extra-headers-prefix=X-Remote-Extra- \\
   --requestheader-group-headers=X-Remote-Group \\
   --requestheader-username-headers=X-Remote-User \\
@@ -102,9 +103,9 @@ EOF
 ls
 echo 'Creating Kubernetes Controller Manager systemd service'
 
-if [[ ! -f /var/lib/kubernetes/kube-controller-manager.kubeconfig ]]; then
-  echo 'Moving kubernetes Controller Manager config to /var/lib/kubernetes/'
-  sudo mv kube-controller-manager.kubeconfig /var/lib/kubernetes/
+if [[ ! -f /etc/kubernetes/kube-controller-manager.kubeconfig ]]; then
+  echo 'Moving kubernetes Controller Manager config to /etc/kubernetes/'
+  sudo mv kube-controller-manager.kubeconfig /etc/kubernetes/
 fi
 
 cat <<EOF | sudo tee /etc/systemd/system/kube-controller-manager.service
@@ -118,12 +119,12 @@ ExecStart=/usr/local/bin/kube-controller-manager \\
   --bind-address=127.0.0.1 \\
   --cluster-cidr=${CLUSTER_CIDR} \\
   --cluster-name=kubernetes \\
-  --cluster-signing-cert-file=/var/lib/kubernetes/kubernetes-ca.pem \\
-  --cluster-signing-key-file=/var/lib/kubernetes/kubernetes-ca-key.pem \\
-  --kubeconfig=/var/lib/kubernetes/kube-controller-manager.kubeconfig \\
+  --cluster-signing-cert-file=/etc/kubernetes/kubernetes-ca.pem \\
+  --cluster-signing-key-file=/etc/kubernetes/kubernetes-ca-key.pem \\
+  --kubeconfig=/etc/kubernetes/kube-controller-manager.kubeconfig \\
   --leader-elect=true \\
-  --root-ca-file=/var/lib/kubernetes/kubernetes-ca.pem \\
-  --service-account-private-key-file=/var/lib/kubernetes/service-account-key.pem \\
+  --root-ca-file=/etc/kubernetes/kubernetes-ca.pem \\
+  --service-account-private-key-file=/etc/kubernetes/service-account-key.pem \\
   --service-cluster-ip-range=${SERVICE_CLUSTER_IP_RANGE} \\
   --use-service-account-credentials=true \\
   --v=2
@@ -136,9 +137,9 @@ EOF
 
 echo 'Creating Kubernetes Scheduler systemd service'
 
-if [[ ! -f /var/lib/kubernetes/kube-scheduler.kubeconfig ]]; then
-  echo 'Moving Kubernetes Scheduler config to /var/lib/kubernetes/'
-  sudo mv kube-scheduler.kubeconfig /var/lib/kubernetes/
+if [[ ! -f /etc/kubernetes/kube-scheduler.kubeconfig ]]; then
+  echo 'Moving Kubernetes Scheduler config to /etc/kubernetes/'
+  sudo mv kube-scheduler.kubeconfig /etc/kubernetes/
 fi
 
 sudo mkdir -p /etc/kubernetes/config
@@ -147,7 +148,7 @@ cat <<EOF | sudo tee /etc/kubernetes/config/kube-scheduler.yaml
 apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 clientConnection:
-  kubeconfig: "/var/lib/kubernetes/kube-scheduler.kubeconfig"
+  kubeconfig: "/etc/kubernetes/kube-scheduler.kubeconfig"
 leaderElection:
   leaderElect: true
 EOF

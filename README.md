@@ -42,7 +42,15 @@ multipass shell lab-dev
 
 ### ToDo
 
-- [x] Fix immutable download!
+- [ ] Add support iximiuz labs env and multipass
+  - [x] create and transfer certs
+  - [ ] download files and transfer to nodes
+    - [ ] extract proxy-server from containr images via crane
+    - [ ] use containerd 2.x runtime -> 2.1 beta (to support image volumes)
+    - [ ] use Cri-O at node-04 and crun
+  - [ ] Use Kubernetes 1.33
+- [x] Download all artifacts!
+  - [x] Fix immutable download!
   - [ ] extract konnectivity proxy-server from docker images to setup as systemd
   - [ ] extract kube-vip to setup as systemd service
 - [ ] optional multipass installation (remove from dependency ixi create vms) 
@@ -56,6 +64,22 @@ multipass shell lab-dev
   - create ETCD certs
   - create Front proxy client certs
   - Kubelet client certs api-server
+  - Kubelet CA
+  - Kubelet TLS certs per node or one global cert
+  - metrics-server - front proxy
+  - RSA 2048 or other algo?
+  - Rotation
+  - DNSSec
+- [ ] RBAC
+  - admin user organisation "O" `system:masters`
+  - A lot of components use this, check how kubeadm configure that
+    - super-admin first leader (kube-vip) and admin?
+- [ ] HA Setup
+  - ETCD Communitation
+  - Cluster konfig  
+- [ ] CoreDNS issues
+  - resolve local hostname inside cluster
+  - DNS subdomain of nodes
 - [ ] Create Docs
   - A journey of manually steps
   - Hints of more informations
@@ -81,19 +105,35 @@ multipass shell lab-dev
 - [ ] Add DevContainer
 - [ ] renovate update?
 - [ ] Add Cert-manager, external DNS, cloud flare tunnel
+  - Add List of node hosts
 - [ ] Add kubevip and HA ControlPlane
   - [ ] extract kube-vip binary
   - [ ] create a systemd service setup
   - [ ] config api server and clients (kubelet, cilium, service lb kubernetes) use the vip
-- [ ] Add Headlamp
+- [ ] Add more
+  - Headlamp
+  - fluxcd
+  - longhorn
+  - linstor/DRDB
+  - velero
+  - minio
+  - monitoring
+    - otel
+    - prometheus
+    - grafana
+    - victoria logs???
+    - jaeger
 - [ ] Update github actions pipeline
+- [ ] 
 - [ ] Is tls at containerd supported?
+  - CRI with tls?
   ```toml
     [grpc]
     address = "/run/containerd/containerd.sock"
     tcp_address = ""
     tcp_tls_cert = ""
     tcp_tls_key = ""
+
   ```
 ## Requirements
 
@@ -414,6 +454,23 @@ docker container rm proxy-server
 
 # multiarch
 ```
+
+
+If you prefer a lighter and script-friendly way:
+
+1. Download and extract the image filesystem:
+
+```shell
+crane export registry.k8s.io/kas-network-proxy/proxy-server:v0.32.0 proxyserver-0.32.0.tar
+```
+
+2. Extract the tar to get the container filesystem:
+
+```shell
+tar -xvf proxyserver-0.32.0.tar proxy-server
+```
+
+Note: crane export is equivalent to docker export in behavior — it gives you the filesystem of the container image.
 
 ## Coredns
 

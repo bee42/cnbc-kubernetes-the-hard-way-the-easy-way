@@ -221,5 +221,61 @@ cfssl genkey -initca etcd-ca-csr.json | cfssljson -bare etcd-ca
 cfssl sign -ca ../ca.pem -ca-key ../ca-key.pem -config ../root-ca-config.json -profile intermediate etcd-ca.csr | cfssljson -bare etcd-ca
 cfssl print-defaults config etcd-ca-config.json
 
+echo 'Create the kubelet Intermediate CA'
+
+mkdir -p kubelet-ca
+cd kubelet-ca
+
+cat << EOF > kubelet-ca-config.json
+{
+    "signing": {
+        "profiles": {
+            "server": {
+                "expiry": "${VALID_IN_HOURS}h",
+                "usages": [
+                    "signing",
+                    "key encipherment",
+                    "server auth"
+                ]
+            },
+            "client": {
+                "expiry": "${VALID_IN_HOURS}h",
+                "usages": [
+                    "signing",
+                    "key encipherment",
+                    "client auth"
+                ]
+            }
+        }
+    }
+}
+EOF
+
+cat << EOF > kubelet-ca-csr.json
+{
+    "CN": "kubelet-ca",
+    "key": {
+        "algo": "rsa",
+        "size": 2048
+    },
+    "ca": {
+        "expiry": "${CA_EXPIRY_IN_HOURS}h"
+    },
+    "names": [
+    {
+      "C": "${COUNTRY}",
+      "L": "${CITY}",
+      "O": "bee42 solutions gmbh",
+      "OU": "CNBC",
+      "ST": "${STATE}"
+    }
+  ]
+}
+EOF
+
+cfssl genkey -initca kubelet-ca-csr.json | cfssljson -bare kubelet-ca
+cfssl sign -ca ../ca.pem -ca-key ../ca-key.pem -config ../root-ca-config.json -profile intermediate kubelet-ca.csr | cfssljson -bare kubelet-ca
+cfssl print-defaults config kubelet-ca-config.json
+
 cd ..
 

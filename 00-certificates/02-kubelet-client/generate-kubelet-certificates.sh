@@ -32,7 +32,7 @@ else
   INTERNAL_IP=$(ssh "${instance}" "hostname -I | awk '{print \$1}'")
 fi
 
-cat > "${instance}"-csr.json <<EOF
+cat > "${instance}"-client-csr.json <<EOF
 {
   "CN": "system:node:${instance}",
   "key": {
@@ -62,7 +62,7 @@ cfssl gencert \
   -ca=../00-Certificate-Authority/kubernetes-ca.pem \
   -ca-key=../00-Certificate-Authority/kubernetes-ca-key.pem \
   -config=../00-Certificate-Authority/kubernetes-ca-config.json \
-  -profile=worker \
-  "${instance}"-csr.json | cfssljson -bare "${instance}"
+  -profile=client \
+  "${instance}"-client-csr.json | cfssljson -bare "${instance}-client"
 
 done

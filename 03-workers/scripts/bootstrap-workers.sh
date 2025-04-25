@@ -45,9 +45,9 @@ if ! command -v kubectl &> /dev/null || ! command -v kube-proxy &> /dev/null || 
   sudo mkdir -p \
     /etc/cni/net.d \
     /opt/cni/bin \
-    /var/lib/kubelet \
-    /var/lib/kube-proxy \
-    /var/lib/kubernetes \
+    /etc/kubelet \
+    /etc/kube-proxy \
+    /etc/kubernetes \
     /var/run/kubernetes
 
   mkdir containerd
@@ -65,7 +65,7 @@ if [[ ! -f /etc/containerd/config.toml ]]; then
   sudo mkdir -p /etc/containerd/
   cat << EOF | sudo tee /etc/containerd/config.toml
 version = 2
-root = "/var/lib/containerd"
+root = "/etc/containerd"
 state = "/run/containerd"
 
 [plugins]
@@ -77,11 +77,11 @@ state = "/run/containerd"
     runtime = "runc"
     runtime_root = ""
 
-  [plugins."io.containerd.grpc.v1.cri".registry]
-    [plugins."io.containerd.grpc.v1.cri".registry.mirrors]
-      [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]
-        endpoint = ["http://cnbc-mirror:5001", "https://registry-1.docker.io"]
 EOF
+#  [plugins."io.containerd.grpc.v1.cri".registry]
+#    [plugins."io.containerd.grpc.v1.cri".registry.mirrors]
+#      [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]
+#        endpoint = ["http://cnbc-mirror:5001", "https://registry-1.docker.io"]
 
   cat <<EOF | sudo tee /etc/systemd/system/containerd.service
 [Unit]
@@ -115,7 +115,7 @@ debug: false
 EOF
 fi
 
-if [[ ! -f /var/lib/kubelet/kubelet-config.yaml || ! -f /var/lib/kubelet/kubeconfig || ! -f /etc/cni/net.d/99-loopback.conf ]]; then
+if [[ ! -f /etc/kubelet/kubelet-config.yaml || ! -f /etc/kubelet/kubeconfig || ! -f /etc/cni/net.d/99-loopback.conf ]]; then
   echo 'Creating kubelet configuration'
 
   cat <<EOF | sudo tee /etc/cni/net.d/99-loopback.conf
@@ -126,11 +126,12 @@ if [[ ! -f /var/lib/kubelet/kubelet-config.yaml || ! -f /var/lib/kubelet/kubecon
 }
 EOF
 
-  sudo mv "${HOSTNAME}"-key.pem "${HOSTNAME}".pem /var/lib/kubelet/
-  sudo mv "${HOSTNAME}".kubeconfig /var/lib/kubelet/kubeconfig
-  sudo mv kubernetes-ca.pem /var/lib/kubernetes/
+  sudo mv "${HOSTNAME}"-server-key.pem "${HOSTNAME}"-server.pem /etc/kubelet/
+  sudo mv "${HOSTNAME}".kubeconfig /etc/kubelet/kubeconfig
+  sudo mv kubernetes-ca.pem /etc/kubernetes/
+  sudo mv kubelet-ca.pem /etc/kubelet/
 
-  cat <<EOF | sudo tee /var/lib/kubelet/kubelet-config.yaml
+  cat <<EOF | sudo tee /etc/kubelet/kubelet-config.yaml
 kind: KubeletConfiguration
 apiVersion: kubelet.config.k8s.io/v1beta1
 authentication:
@@ -139,7 +140,7 @@ authentication:
   webhook:
     enabled: true
   x509:
-    clientCAFile: "/var/lib/kubernetes/kubernetes-ca.pem"
+    clientCAFile: "/etc/kubernetes/kubernetes-ca.pem"
 authorization:
   mode: Webhook
 clusterDomain: "${CLUSTER_DOMAIN}"
@@ -147,8 +148,8 @@ clusterDNS:
   - "${DNS_CLUSTER_IP}"
 resolvConf: "/run/systemd/resolve/resolv.conf"
 runtimeRequestTimeout: "15m"
-tlsCertFile: "/var/lib/kubelet/${HOSTNAME}.pem"
-tlsPrivateKeyFile: "/var/lib/kubelet/${HOSTNAME}-key.pem"
+tlsCertFile: "/etc/kubelet/${HOSTNAME}-server.pem"
+tlsPrivateKeyFile: "/etc/kubelet/${HOSTNAME}-server-key.pem"
 registerNode: true
 containerRuntimeEndpoint: "unix:///var/run/containerd/containerd.sock"
 EOF
@@ -162,8 +163,8 @@ Requires=containerd.service
 
 [Service]
 ExecStart=/usr/local/bin/kubelet \\
-  --config=/var/lib/kubelet/kubelet-config.yaml \\
-  --kubeconfig=/var/lib/kubelet/kubeconfig \\
+  --config=/etc/kubelet/kubelet-config.yaml \\
+  --kubeconfig=/etc/kubelet/kubeconfig \\
   --v=2
 Restart=on-failure
 RestartSec=5
@@ -175,14 +176,14 @@ fi
 
 if [ "$KUBE_PROXY_ENABLED" == "on" ] ; then
 
-if [[ ! -f /var/lib/kube-proxy/kubeconfig || ! -f /var/lib/kube-proxy/kube-proxy-config.yaml || ! -f /etc/systemd/system/kube-proxy.service ]]; then
+if [[ ! -f /etc/kube-proxy/kubeconfig || ! -f /etc/kube-proxy/kube-proxy-config.yaml || ! -f /etc/systemd/system/kube-proxy.service ]]; then
   echo 'Creating kube-proxy config'
-  sudo mv kube-proxy.kubeconfig /var/lib/kube-proxy/kubeconfig
-  cat <<EOF | sudo tee /var/lib/kube-proxy/kube-proxy-config.yaml
+  sudo mv kube-proxy.kubeconfig /etc/kube-proxy/kubeconfig
+  cat <<EOF | sudo tee /etc/kube-proxy/kube-proxy-config.yaml
 kind: KubeProxyConfiguration
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 clientConnection:
-  kubeconfig: "/var/lib/kube-proxy/kubeconfig"
+  kubeconfig: "/etc/kube-proxy/kubeconfig"
 mode: "iptables"
 clusterCIDR: "${CLUSTER_CIDR}"
 EOF
@@ -194,7 +195,7 @@ Documentation=https://kubernetes.io/docs/reference/command-line-tools-reference/
 
 [Service]
 ExecStart=/usr/local/bin/kube-proxy \\
-  --config=/var/lib/kube-proxy/kube-proxy-config.yaml
+  --config=/etc/kube-proxy/kube-proxy-config.yaml
 Restart=on-failure
 RestartSec=5
 
@@ -229,7 +230,7 @@ done
 
 function get_node_status() {
   kubectl get nodes \
-    --kubeconfig /var/lib/kubelet/kubeconfig ${HOSTNAME} | \
+    --kubeconfig /etc/kubelet/kubeconfig ${HOSTNAME} | \
     grep "${HOSTNAME}" | awk '{ print $2 }'
 }
 

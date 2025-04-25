@@ -34,3 +34,10 @@ for file in "${!FILES[@]}"; do
     curl -fSL --ssl-reqd -o "$file" "$url"
   fi
 done
+
+if -f proxy-server ; then
+  msg_info "Downloading konnectivity proxy-server from image registry.k8s.io/kas-network-proxy/proxy-server:v${KONNECTIFITY_VERSION}"
+  crane export registry.k8s.io/kas-network-proxy/proxy-server:v${KONNECTIFITY_VERSION} proxyserver.tar
+  tar -xvf proxyserver.tar proxy-server
+  rm proxyserver.tar
+fi

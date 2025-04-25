@@ -24,14 +24,14 @@ done
 
 echo 'Creating kube-vip systemd service'
 
-if [[ ! -f /var/lib/kubernetes/kube-vip.kubeconfig ]]; then
-  echo 'Moving kube-vip config to /var/lib/kubernetes/'
-  sudo mv kube-vip.kubeconfig /var/lib/kubernetes/
+mkdir -p /etc/kubernetes/kube-vip/
+
+if [[ ! -f /etc/kubernetes/kube-vip/kube-vip.kubeconfig ]]; then
+  echo 'Moving kube-vip config to /etc/kubernetes/kube-vip/'
+  sudo mv kube-vip.kubeconfig /etc/kubernetes/kube-vip/
 fi
 
-mkdir -p /var/lib/kubernetes/kube-vip/
-
-INTERFACE=192.
+INTERFACE=$(ip -o addr show | awk '$4 ~ /^${ADDRESS}\/.*/ {print $2})'
 cat <<EOF | sudo tee /etc/systemd/system/kube-vip.service
 [Unit]
 Description=Kube-VIP - Virtual IP for Kubernetes Control Plane
@@ -43,7 +43,7 @@ Wants=network-online.target
 Type=simple
 ExecStart=/usr/local/bin/kube-vip manager \
     --interface ${INTERFACE} \
-    --address ${ADDRESS} \
+    --address ${COMPUTER_IPV4_ADDRESSES[0]} \
     --vip-cidr 32 \
     --arp \
     --controlplane \

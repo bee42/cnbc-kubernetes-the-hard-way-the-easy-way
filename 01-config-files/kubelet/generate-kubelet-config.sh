@@ -4,9 +4,15 @@ IFS=$'\n\t'
 
 # This works because we only have 1 controller
 # logic will have to change if we have more than 1
-KUBERNETES_VIRTUAL_IP_ADDRESS="$(multipass list | grep 'controller' | awk '{ print $1 }' | xargs multipass info | grep 'IPv4' | awk '{ print $2 }')"
+if [[ "${MULTIPASS_ENABLED}" == 'on' ]] ; then
+  KUBERNETES_VIRTUAL_IP_ADDRESS="$(multipass list | grep 'controller' | awk '{ print $1 }' | xargs multipass info | grep 'IPv4' | awk '{ print $2 }')"
+  declare -a MINIONS=( $(multipass list | grep 'worker' | awk '{ print $1 }' ) )
+else
+  KUBERNETES_VIRTUAL_IP_ADDRESS=$(ssh "node-02" "hostname -I | awk '{print \$1}'")
+  declare -a MINIONS=( 'node-03' 'node-04' )
+fi
 
-for instance in $(multipass list | grep 'worker' | awk '{ print $1 }'); do
+for instance in "${MINIONS[@]}"; do
   kubectl config set-cluster kubernetes-the-hard-way \
     --certificate-authority=../../00-certificates/00-Certificate-Authority/kubernetes-ca.pem \
     --embed-certs=true \
@@ -14,8 +20,8 @@ for instance in $(multipass list | grep 'worker' | awk '{ print $1 }'); do
     --kubeconfig="${instance}".kubeconfig
 
   kubectl config set-credentials system:node:"${instance}" \
-    --client-certificate=../../00-certificates/02-kubelet-client/"${instance}".pem \
-    --client-key=../../00-certificates/02-kubelet-client/"${instance}"-key.pem \
+    --client-certificate=../../00-certificates/02-kubelet-client/"${instance}"-client.pem \
+    --client-key=../../00-certificates/02-kubelet-client/"${instance}"-client-key.pem \
     --embed-certs=true \
     --kubeconfig="${instance}".kubeconfig
 

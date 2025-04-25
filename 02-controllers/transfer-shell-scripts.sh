@@ -6,14 +6,20 @@ GITROOT=$(git rev-parse --show-toplevel)
 # shellcheck disable=SC1090,SC1091
 . "${GITROOT}"/lib/utils
 strictMode
+# shellcheck disable=SC1090,SC1091
+. "${GITROOT}"/env.sh
 
-for instance in $(multipass list | grep 'controller' | awk '{ print $1 }'); do
+if [[ "${MULTIPASS_ENABLED}" == 'on' ]] ; then
+  declare -a GRUS=( $(multipass list | grep 'controller' | awk '{ print $1 }' ) )
+else
+  declare -a GRUS=( 'node-02' )
+fi
+
+# TODO: only files from control plane services!
+for instance in "${GRUS[@]}"; do
   for file in ./*/*.sh; do
     transfer_file "${file}" "${instance}"
   done
-done
-
-for instance in $(multipass list | grep 'controller' | awk '{ print $1 }'); do
   for file in ./*/*.yaml; do
     transfer_file "${file}" "${instance}"
   done

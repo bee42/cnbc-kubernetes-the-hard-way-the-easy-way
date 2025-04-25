@@ -19,6 +19,7 @@ declare -a DEPS=(
   'kubectl'
   'ipcalc'
   'helm'
+  'crane'
 )
 
 ARCH=$(get_arch)
@@ -92,6 +93,22 @@ install_deps_apt() {
         if ! command -v helm &> /dev/null; then
           echo "Installing Helm..."
           curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        fi
+        ;;
+      crane)
+        # https://github.com/google/go-containerregistry/blob/main/cmd/crane/README.md
+        if ! command -v crane &> /dev/null; then
+          echo "Installing crane..."
+          REPO="google/go-containerregistry"
+          if [ "$ARCH" -eq "amd64" ]; then
+            CARCH="x86_64"
+          else
+            CARCH="$ARCH"
+          fi
+          LATEST_TAG=$(curl -s "https://api.github.com/repos/${REPO}/releases/latest" | jq -r .tag_name)
+          curl -L -o go-containerregistry.tar.gz https://github.com/${REPO}/releases/download/${LATEST_TAG}/go-containerregistry_Linux_${CARCH}.tar.gz
+          tar -zxvf go-containerregistry.tar.gz -C /usr/local/bin/ crane
+          rm go-containerregistry.tar.gz
         fi
         ;;
       ipcalc)
