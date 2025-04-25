@@ -2,7 +2,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-if [[ ! -x $(command -v kube-apiserver) || ! -x $(command -v kube-controller-manager) || ! -x $(command -v kube-scheduler) || ! -x $(command -v kubectl) ]]; then
+if [[ ! -x $(command -v kube-apiserver) || ! -x $(command -v kube-controller-manager) || ! -x $(command -v kube-scheduler) || ! -x $(command -v kubectl) || ! -x $(command -v proxy-server)]]; then
   echo 'kubernetes binaries are not available in PATH, I will download them and place them in /usr/local/bin'
   chmod +x kube-apiserver kube-controller-manager kube-scheduler kubectl proxy-server
   sudo mv kube-apiserver kube-controller-manager kube-scheduler kubectl proxy-server /usr/local/bin/
