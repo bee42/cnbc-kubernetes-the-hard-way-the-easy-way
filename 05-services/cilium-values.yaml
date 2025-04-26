@@ -22,3 +22,12 @@ loadBalancer:
   algorithm: maglev
   mode: snat
 localRedirectPolicy: true
+hubble:
+  relay:
+    enabled: true
+  ui:
+    enabled: true
+ingressController:
+  enabled: true
+  loadbalancerMode: shared
+  

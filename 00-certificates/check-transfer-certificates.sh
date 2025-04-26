@@ -46,13 +46,9 @@ function check_transfed_minion_certs() {
   declare -a MISSING=()
   for instance in "${MINIONS[@]}"; do
     declare -a MINIONS_CERTS=(
-      './00-Certificate-Authority/kubernetes-ca.pem' 
-      "./02-kubelet-client/${instance}-client-key.pem"
-      "./02-kubelet-client/${instance}-client-pem"
       './00-Certificate-Authority/kubelet-ca/kubelet-ca.pem' 
       "./10-kubelet-server/${instance}-server-key.pem"
       "./10-kubelet-server/${instance}-server.pem"
-
     )
     if [[ "${MULTIPASS_ENABLED}" == 'on' ]] ; then
       declare -a INSTANCE_MINION_CERT=( $(multipass exec $instance 'find . -type f -name "*.pem" | sort | sed "s|^./||"' ) )

@@ -406,16 +406,16 @@ kubectl -n kube-system create secret tls metrics-proxy \
 ```shell
 # access containerLogs
 curl \
-  --cert ./00-certificates/06-kubernetes-api/apiserver-kubelet-client.pem \
-  --key ./00-certificates/06-kubernetes-api/apiserver-kubelet-client-key.pem \
-  --cacert ./00-certificates/00-Certificate-Authority/kubernetes-ca.pem \
+  --cert ./00-certificates/10-kubelet-server/apiserver-kubelet-client.pem \
+  --key ./00-certificates/10-kubelet-server/apiserver-kubelet-client-key.pem \
+  --cacert ./00-certificates/00-Certificate-Authority/kubelet-ca/kubelet-ca.pem \
   https://192.168.64.20:10250/containerLogs/kube-system/metrics-server-6cb874ffbc-wjsgn/metrics-server
 
 # get metrics
 curl \
-  --cert ./00-certificates/06-kubernetes-api/apiserver-kubelet-client.pem \
-  --key ./00-certificates/06-kubernetes-api/apiserver-kubelet-client-key.pem \
-  --cacert ./00-certificates/00-Certificate-Authority/kubernetes-ca.pem \
+  --cert ./00-certificates/10-kubelet-serveri/apiserver-kubelet-client.pem \
+  --key ./00-certificates/10-kubelet-server/apiserver-kubelet-client-key.pem \
+  --cacert ./00-certificates/00-Certificate-Authority/kubelet-ca/kubelet-ca.pem \
   https://192.168.64.20:10250/metrics/resource
 ```
 

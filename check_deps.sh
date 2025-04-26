@@ -22,6 +22,7 @@ function check_dependencies() {
     'ipcalc'
     'helm'
     'crane'
+    'gettext'
   )
   declare -a MISSING=()
   # Ensure dependencies are present
@@ -29,9 +30,15 @@ function check_dependencies() {
     if [[ "$i" == "multipass" && "${MULTIPASS_ENABLED}" == 'off' ]]; then
       continue;
     fi
-    if ! command -v "${i}" &> /dev/null ; then
-      MISSING+=("${i}")
-    fi
+    if [[ "$i" == "gettext" ]]; then
+      if ! command -v "envsubst" &> /dev/null ; then
+        MISSING+=("${i}")
+      fi
+    else
+      if ! command -v "${i}" &> /dev/null ; then
+        MISSING+=("${i}")
+      fi
+    fi   
   done
   if [[ ${#MISSING[@]} -ne 0 ]]; then
     msg_fatal "[-] Dependencies unmet. Please verify that the following are installed and in the PATH: " "${MISSING[@]}"

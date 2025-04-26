@@ -20,6 +20,7 @@ declare -a DEPS=(
   'ipcalc'
   'helm'
   'crane'
+  'gettext'
 )
 
 ARCH=$(get_arch)
@@ -113,6 +114,9 @@ install_deps_apt() {
         ;;
       ipcalc)
         sudo apt-get install -y ipcalc
+        ;;
+      gettext)
+        sudo apt-get install -y gettext-base
         ;;
       git)
         sudo apt-get install -y git

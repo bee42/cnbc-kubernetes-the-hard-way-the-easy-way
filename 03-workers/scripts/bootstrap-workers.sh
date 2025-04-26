@@ -128,7 +128,6 @@ EOF
 
   sudo mv "${HOSTNAME}"-server-key.pem "${HOSTNAME}"-server.pem /etc/kubelet/
   sudo mv "${HOSTNAME}".kubeconfig /etc/kubelet/kubeconfig
-  sudo mv kubernetes-ca.pem /etc/kubernetes/
   sudo mv kubelet-ca.pem /etc/kubelet/
 
   cat <<EOF | sudo tee /etc/kubelet/kubelet-config.yaml
@@ -140,7 +139,7 @@ authentication:
   webhook:
     enabled: true
   x509:
-    clientCAFile: "/etc/kubernetes/kubernetes-ca.pem"
+    clientCAFile: "/etc/kubernetes/kubelet-ca.pem"
 authorization:
   mode: Webhook
 clusterDomain: "${CLUSTER_DOMAIN}"
