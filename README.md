@@ -904,20 +904,20 @@ To secure the communication between the kubelet and the container runtime over T
 
 The kubelet can be configured to use TLS when connecting to the container runtime by specifying the appropriate flags or configuration options:​
 
-- `--container-runtime-endpoint`: Set this to the secure endpoint of the container runtime, e.g., tcp://127.0.0.1:1234.​
+- `--container-runtime-endpoint`: Set this to the secure endpoint of the container runtime, e.g., `tcp://127.0.0.1:1234`.​
 - `--image-service-endpoint`: If the image service uses a different endpoint, specify it similarly.​
 Kubernetes
 
 - `--tls-cert-file` and `--tls-private-key-file`: Provide the paths to the TLS certificate and private key files for the kubelet.​
  `--tls-ca-file`: Specify the path to the Certificate Authority (CA) certificate to verify the container runtime's certificate.​
 
-Alternatively, these settings can be specified in the kubelet's configuration file (kubelet-config.yaml) under the authentication and authorization sections.​
+Alternatively, these settings can be specified in the kubelet's configuration file (`kubelet-config.yaml`) under the authentication and authorization sections.​
 
 2. Container Runtime Configuration:
 
 The container runtime must be configured to accept secure connections:​
 
-- containerd: In the config.toml file, under the [plugins."io.containerd.grpc.v1.cri"] section, set the endpoint to a secure listener, e.g., tcp://127.0.0.1:1234. Additionally, specify the TLS certificate, key, and CA files to enable TLS. ​
+- containerd: In the config.toml file, under the `[plugins."io.containerd.grpc.v1.cri"]` section, set the endpoint to a secure listener, e.g., `tcp://127.0.0.1:1234`. Additionally, specify the TLS certificate, key, and CA files to enable TLS. ​
 - CRI-O: Similar configurations can be applied in CRI-O's configuration files to enable TLS for its gRPC endpoints.​
 
 #### Considerations
