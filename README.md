@@ -839,6 +839,95 @@ ControlPlane to Cluster Service Communication
 
 - https://kubernetes.io/docs/concepts/architecture/control-plane-node-communication/#control-plane-to-node
 
+## implement checks
+
+
+| Component           | Default Port | Protocol | Description                    |
+|---------------------|--------------|----------|--------------------------------|
+| kube-apiserver      | 6443         | HTTPS    | Main API server port           |
+| etcd                | 2379-2380    | HTTPS    | etcd client/server             |
+| kube-scheduler      | 10259        | HTTPS    | Metrics & healthz (local only) |
+| kube-controller     | 10257        | HTTPS    | Metrics & healthz (local only) |
+| kubelet (worker)    | 10250        | HTTPS    | API to kubelet (on each node)  |
+| kube-proxy          | 10256        | HTTP     | Metrics                        |
+| konnectivity-server | 8091         | HTTPS    | server                         |
+| konnectivity-server | 8092         | HTTPS    | admin                          |
+| konnectivity-server | 9093         | HTTPS    | healthz                        |
+
+
+Check Ports
+
+```shell
+sudo lsof -i -P -n | grep LISTEN
+sudo netstat -tulpn | grep LISTEN
+
+# control plane check
+# api-server, etcd, controller-manager, scheduler, konnectivit agent
+# controller and scheduler localhost only?
+sudo ss -tuln | grep -E '(:6443|:2379|:2380|:10259|:10257|:10250|:8091|:8092|:8093)'
+
+# worker kubelet and kube-proxy
+sudo ss -tuln | grep -E '(:10250|:10256)'
+
+# cilium at worker
+```
+
+## Kublet to Container Runtime Interface (CRI) are doesn't mTLS safe?
+
+Here's a more detailed breakdown:
+
+### Kubelet-API Server Communication:
+
+The Kubelet needs TLS certificates to authenticate and authorize its communication with the Kubernetes API server. This is essential for tasks like registering the node, fetching pod specifications, and reporting node status. 
+
+### CRI Communication:
+
+The Kubelet uses the Container Runtime Interface (CRI) to interact with the container runtime (e.g., containerd, Docker) running on the node. While gRPC connections between the Kubelet and CRI can use TLS, it's not a strict requirement for basic functionality. 
+
+### TLS Bootstrapping:
+
+Kubernetes uses a process called TLS bootstrapping to ensure the Kubelet has a valid client certificate for communicating with the API server. This involves the Kubelet initially connecting to the API server using a bootstrap token, requesting a certificate signing request (CSR), and then the API server issuing and delivering a certificate to the Kubelet. 
+
+### Why not CRI-specific TLS?
+
+The Kubelet's primary focus is on secure communication with the API server, which is crucial for cluster management and control. The CRI is more of a backend implementation detail for the kubelet, and while TLS is a common security practice, the Kubelet's configuration and certificates are geared towards API server communication. 
+
+### Example
+
+Yes, the communication between the kubelet and the Container Runtime Interface (CRI) can be secured using TLS. By default, Kubernetes employs gRPC over Unix domain sockets for this interaction, which inherently provides a level of security through operating system permissions. However, when the kubelet communicates with the container runtime over TCP, implementing TLS is essential to ensure secure communication.​
+
+#### Enabling TLS Between Kubelet and CRI
+
+To secure the communication between the kubelet and the container runtime over TCP using TLS, both components must be configured appropriately:​
+
+1. Kubelet Configuration:
+
+The kubelet can be configured to use TLS when connecting to the container runtime by specifying the appropriate flags or configuration options:​
+
+- `--container-runtime-endpoint`: Set this to the secure endpoint of the container runtime, e.g., tcp://127.0.0.1:1234.​
+- `--image-service-endpoint`: If the image service uses a different endpoint, specify it similarly.​
+Kubernetes
+
+- `--tls-cert-file` and `--tls-private-key-file`: Provide the paths to the TLS certificate and private key files for the kubelet.​
+ `--tls-ca-file`: Specify the path to the Certificate Authority (CA) certificate to verify the container runtime's certificate.​
+
+Alternatively, these settings can be specified in the kubelet's configuration file (kubelet-config.yaml) under the authentication and authorization sections.​
+
+2. Container Runtime Configuration:
+
+The container runtime must be configured to accept secure connections:​
+
+- containerd: In the config.toml file, under the [plugins."io.containerd.grpc.v1.cri"] section, set the endpoint to a secure listener, e.g., tcp://127.0.0.1:1234. Additionally, specify the TLS certificate, key, and CA files to enable TLS. ​
+- CRI-O: Similar configurations can be applied in CRI-O's configuration files to enable TLS for its gRPC endpoints.​
+
+#### Considerations
+
+- Unix Domain Sockets vs. TCP: While Unix domain sockets are secure through file system permissions and are commonly used for local communication, using TCP with TLS is necessary when the kubelet and container runtime are on different hosts or when additional security is required.​
+- Certificate Management: Proper management of TLS certificates is crucial. Ensure that certificates are signed by a trusted CA and are rotated regularly to maintain security.​
+- Performance: Enabling TLS may introduce slight performance overhead due to encryption and decryption processes. Evaluate the impact based on your cluster's requirements.​
+
+By configuring both the kubelet and the container runtime to use TLS over TCP, you can secure their communication, protecting against potential eavesdropping or man-in-the-middle attacks.​
+
 ## Challenges of Day 2 Operations
 
 - Rotation of TLS certs of kubernetes componentes
@@ -862,6 +951,8 @@ ControlPlane to Cluster Service Communication
   - external-dns
   - external secret manager
   - storage
+- tls bootstraping kublet
+  - https://kubernetes.io/docs/reference/access-authn-authz/kubelet-tls-bootstrapping/
 
 ## FAQ
 

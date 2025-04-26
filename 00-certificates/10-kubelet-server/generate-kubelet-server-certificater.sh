@@ -58,6 +58,7 @@ EOF
 # Generate the kubelet server certificate
 # The certificate is signed by the Kubelet CA
 # The certificate is used by the kubelet to authenticate apiserver as client
+# Todo: check that this certs user for mtls cri?
 cfssl gencert \
   -ca=../00-Certificate-Authority/kubelet-ca/kubelet-ca.pem \
   -ca-key=../00-Certificate-Authority/kubelet-ca/kubelet-ca-key.pem \
