@@ -29,15 +29,15 @@ FILES=(
   ["nerdctl-full-${NERDCTL_VERSION}-linux-${ARCH}.tar.gz"]="https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/nerdctl-full-${NERDCTL_VERSION}-linux-${ARCH}.tar.gz"
 )
 
-for file in "${FILES[@]}"; do
-  url="${FILES[$file]}"
-  if [ -f $file ] ; then
+for file in "${!FILES[@]}"; do
+  if [ ! -f $file ] ; then
+    url="${FILES[$file]}"
     msg_info "Downloading $file from $url"
     curl -fSL --ssl-reqd -o "$file" "$url"
   fi
 done
 
-if [ -f proxy-server ] ; then
+if [ ! -f proxy-server ] ; then
   msg_info "Downloading konnectivity proxy-server from image registry.k8s.io/kas-network-proxy/proxy-server:v${KONNECTIFITY_VERSION}"
   crane export registry.k8s.io/kas-network-proxy/proxy-server:v${KONNECTIFITY_VERSION} proxyserver.tar
   tar -xvf proxyserver.tar proxy-server
