@@ -101,7 +101,7 @@ install_deps_apt() {
         if ! command -v crane &> /dev/null; then
           echo "Installing crane..."
           REPO="google/go-containerregistry"
-          if [ "$ARCH" -eq "amd64" ]; then
+          if [ "$ARCH" == "amd64" ]; then
             CARCH="x86_64"
           else
             CARCH="$ARCH"
