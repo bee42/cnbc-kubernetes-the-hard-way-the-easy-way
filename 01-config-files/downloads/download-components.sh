@@ -29,7 +29,7 @@ FILES=(
   ["nerdctl-full-${NERDCTL_VERSION}-linux-${ARCH}.tar.gz"]="https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/nerdctl-full-${NERDCTL_VERSION}-linux-${ARCH}.tar.gz"
 )
 
-for file in "${!FILES[@]}"; do
+for file in "${FILES[@]}"; do
   url="${FILES[$file]}"
   if [ -f $file ] ; then
     msg_info "Downloading $file from $url"
