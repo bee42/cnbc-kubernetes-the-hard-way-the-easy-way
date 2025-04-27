@@ -7,6 +7,8 @@ GITROOT=$(git rev-parse --show-toplevel)
 . "${GITROOT}"/lib/utils
 strictMode
 
+. "${GITROOT}"/env.sh
+
 ARCH=${ARCH:-$(get_arch)}
 # Download kubernetes components once then distribute them to controller(s) and
 # agents
@@ -29,13 +31,13 @@ FILES=(
 
 for file in "${!FILES[@]}"; do
   url="${FILES[$file]}"
-  if -f $file ; then
+  if [ -f $file ] ; then
     msg_info "Downloading $file from $url"
     curl -fSL --ssl-reqd -o "$file" "$url"
   fi
 done
 
-if -f proxy-server ; then
+if [ -f proxy-server ] ; then
   msg_info "Downloading konnectivity proxy-server from image registry.k8s.io/kas-network-proxy/proxy-server:v${KONNECTIFITY_VERSION}"
   crane export registry.k8s.io/kas-network-proxy/proxy-server:v${KONNECTIFITY_VERSION} proxyserver.tar
   tar -xvf proxyserver.tar proxy-server
