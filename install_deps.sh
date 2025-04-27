@@ -108,7 +108,7 @@ install_deps_apt() {
           fi
           LATEST_TAG=$(curl -s "https://api.github.com/repos/${REPO}/releases/latest" | jq -r .tag_name)
           curl -L -o go-containerregistry.tar.gz https://github.com/${REPO}/releases/download/${LATEST_TAG}/go-containerregistry_Linux_${CARCH}.tar.gz
-          tar -zxvf go-containerregistry.tar.gz -C /usr/local/bin/ crane
+          sudo tar -zxvf go-containerregistry.tar.gz -C /usr/local/bin/ crane
           rm go-containerregistry.tar.gz
         fi
         ;;
