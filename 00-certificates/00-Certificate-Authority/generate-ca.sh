@@ -221,6 +221,8 @@ cfssl genkey -initca etcd-ca-csr.json | cfssljson -bare etcd-ca
 cfssl sign -ca ../ca.pem -ca-key ../ca-key.pem -config ../root-ca-config.json -profile intermediate etcd-ca.csr | cfssljson -bare etcd-ca
 cfssl print-defaults config etcd-ca-config.json
 
+cd ..
+
 echo 'Create the kubelet Intermediate CA'
 
 mkdir -p kubelet-ca
