@@ -43,7 +43,6 @@ declare -a REIGSTRY_FILES=(
   "./downloads/nerdctl-full-${NERDCTL_VERSION}-linux-$(get_arch).tar.gz"
 )
 
-
 if [[ "${MULTIPASS_ENABLED}" == 'on' ]] ; then
   multipass list | grep -E -v "Name|\-\-" | grep "cnbc-k8s" | awk '{var=sprintf("%s\t%s",$3,$1); print var}' > k8s-hosts
   declare -a MINIONS=( $(multipass list | grep 'worker' | awk '{ print $1 }' ) )
@@ -59,13 +58,6 @@ else
     echo "${INTERNAL_IP}\t$|instance}" >>k8s-hosts
   done
 fi
-
-# create kubernetes config files
-for file in ./*/*.sh; do
-  cd "$(dirname ./"${file}")" || exit
-  bash "${file##*/}"
-  cd - || exit
-done
 
 # transfer files
 for instance in "${GRUS[@]}"; do
